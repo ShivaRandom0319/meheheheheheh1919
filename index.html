@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Lust Slayer</title>
+  
   <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@500;700&display=swap" rel="stylesheet">
   <style>
     * {
@@ -161,7 +161,7 @@
     <div id="namedShadowList"></div>
   </nav>
   <main>
-    <h1>Lust Slayer</h1>
+    <h1>Dashboard</h1>
     <div class="dashboard">
       <p><strong>Level:</strong> <span id="level">0</span></p>
       <p><strong>Rank:</strong> <span id="rank">E</span></p>
@@ -171,7 +171,7 @@
         <button onclick="resist()">I Resisted</button>
         <button onclick="defeat()">Defeat</button>
         <!--<button onclick="resetGame()">Reset</button>-->
-        <button onclick="forgeLustGiant()">Forge/Upgrade Lust Giant</button>
+        <button onclick="forgeLustGiant()">Forge/Upgrade Zeno</button>
       </div>
     </div>
   </main>
@@ -220,7 +220,7 @@ function updateUI() {
   if (lustGiantLevel > 0) {
     const p = document.createElement("p");
     p.className = "named-shadow";
-    p.textContent = `Lust Giant (Lv.${lustGiantLevel})`;
+    p.textContent = `Zeno (Lv.${lustGiantLevel})`;
     shadowListEl.appendChild(p);
   }
 
@@ -300,10 +300,10 @@ if (!namedShadows[shadowIndex]) {
         localStorage.setItem("lustGiantLevel", lustGiantLevel);
         localStorage.setItem("lustGiantSpent", lustGiantSpent);
         localStorage.setItem("totalGeneralShadows", totalGeneralShadows);
-        shadowReveal.innerHTML = `Lust Giant upgraded to <strong>Lv.${lustGiantLevel}</strong><br><button onclick='closeReveal()'>OK</button>`;
+        shadowReveal.innerHTML = `Zeno upgraded to <strong>Lv.${lustGiantLevel}</strong><br><button onclick='closeReveal()'>OK</button>`;
         showShadowArrival(`Lust Giant Lv.${lustGiantLevel}`);
       } else {
-        shadowReveal.innerHTML = `You need ${nextCost} shadow soldiers to upgrade Lust Giant.<br><button onclick='closeReveal()'>OK</button>`;
+        shadowReveal.innerHTML = `You need ${nextCost} shadow soldiers to upgrade Zeno.<br><button onclick='closeReveal()'>OK</button>`;
       }
       shadowReveal.style.display = "block";
       updateUI();
