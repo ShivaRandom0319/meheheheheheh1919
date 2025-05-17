@@ -1,0 +1,254 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@500;700&display=swap" rel="stylesheet">
+  <style>
+    body {
+      font-family: 'Montserrat', sans-serif;
+      background: #0b0c10;
+      color: #c5c6c7;
+      margin: 0;
+      padding: 0;
+      display: flex;
+      flex-direction: row;
+      flex-wrap: wrap;
+    }
+
+    nav {
+      width: 250px;
+      background-color: #1f2833;
+      padding: 20px;
+      box-shadow: 5px 0 15px rgba(0, 255, 255, 0.2);
+      height: 100vh;
+      box-sizing: border-box;
+    }
+
+    nav h2 {
+      color: #66fcf1;
+      font-size: 24px;
+      margin-bottom: 20px;
+      text-align: center;
+    }
+
+    .named-shadow {
+      font-size: 18px;
+      color: #c5c6c7;
+      margin: 10px 0;
+      text-align: center;
+    }
+
+    main {
+      flex-grow: 1;
+      text-align: center;
+      padding: 50px;
+      box-sizing: border-box;
+      min-width: 300px;
+    }
+
+    h1 {
+      color: #66fcf1;
+      margin-bottom: 30px;
+    }
+
+    .dashboard {
+      background-color: #1f2833;
+      padding: 20px;
+      border-radius: 10px;
+      max-width: 600px;
+      margin: auto;
+      box-shadow: 0 0 20px #45a29e;
+    }
+
+    .dashboard p {
+      font-size: 20px;
+      margin: 10px 0;
+    }
+
+    .actions button {
+      background-color: #66fcf1;
+      color: #0b0c10;
+      font-size: 18px;
+      padding: 12px 30px;
+      margin: 15px;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+      font-weight: bold;
+    }
+
+    #notification, #shadowReveal {
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      background: #1f2833;
+      color: #fff;
+      padding: 40px;
+      border-radius: 10px;
+      font-size: 24px;
+      display: none;
+      box-shadow: 0 0 20px #45a29e;
+      z-index: 1000;
+      text-align: center;
+      max-width: 90%;
+    }
+
+    #notification button, #shadowReveal button {
+      margin-top: 20px;
+      padding: 10px 20px;
+      font-size: 18px;
+      background: #45a29e;
+      border: none;
+      color: #0b0c10;
+      border-radius: 5px;
+      display: block;
+      margin-left: auto;
+      margin-right: auto;
+    }
+
+    @media screen and (max-width: 768px) {
+      body {
+        flex-direction: column;
+      }
+
+      nav {
+        width: 100%;
+        height: auto;
+        box-shadow: none;
+        text-align: center;
+      }
+
+      main {
+        padding: 20px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <nav>
+    <h2>Named Shadows</h2>
+    <div id="namedShadowList"></div>
+  </nav>
+
+  <main>
+    <h1>Dashboard</h1>
+    <div class="dashboard">
+      <p><strong>Level:</strong> <span id="level">0</span></p>
+      <p><strong>Rank:</strong> <span id="rank">E</span></p>
+      <p><strong>General Shadows:</strong> <span id="shadows">0</span></p>
+      <p><strong>Failures:</strong> <span id="failures">0</span></p>
+      <div class="actions">
+        <button onclick="resist()">I Resisted</button>
+        <button onclick="defeat()">Defeat</button>
+        <button onclick="resetGame()">Reset</button>
+      </div>
+    </div>
+  </main>
+
+  <div id="notification"></div>
+  <div id="shadowReveal"></div>
+
+  <script>
+    const namedShadowNames = ["Temptress", "Crave", "Desire", "Siren", "Ecstasy", "Obsession", "Flesh", "Sin", "Envy", "Madness"];
+    let level = parseInt(localStorage.getItem("level")) || 0;
+    let namedShadows = JSON.parse(localStorage.getItem("namedShadows")) || [];
+    let totalGeneralShadows = parseInt(localStorage.getItem("totalGeneralShadows")) || 0;
+    let failures = parseInt(localStorage.getItem("failures")) || 0;
+
+    function updateUI() {
+      document.getElementById("level").textContent = level;
+      document.getElementById("shadows").textContent = totalGeneralShadows;
+      document.getElementById("rank").textContent = getRank(level);
+      document.getElementById("failures").textContent = failures;
+
+      const shadowListEl = document.getElementById("namedShadowList");
+      shadowListEl.innerHTML = "";
+      namedShadows.forEach((shadow) => {
+        const p = document.createElement("p");
+        p.className = "named-shadow";
+        p.textContent = `${shadow.name} (Lv.${shadow.level})`;
+        shadowListEl.appendChild(p);
+      });
+    }
+
+    function getRank(lvl) {
+      if (lvl >= 75) return "S";
+      if (lvl >= 50) return "A";
+      if (lvl >= 35) return "B";
+      if (lvl >= 20) return "C";
+      if (lvl >= 10) return "D";
+      return "E";
+    }
+
+    function resist() {
+      const nextLevel = level + 1;
+      const isNamedShadowEvent = (nextLevel <= 100 && nextLevel % 10 === 0) || (nextLevel > 100 && (nextLevel - 100) % 5 === 0);
+      const notification = document.getElementById("notification");
+      notification.innerHTML = isNamedShadowEvent ? `A Named Shadow awaits your command<br><button onclick='arise(true)'>Arise</button>` : `${nextLevel * 2} Shadows await your command<br><button onclick='arise(false)'>Arise</button>`;
+      notification.style.display = "block";
+    }
+
+    function arise(named) {
+      document.getElementById("notification").style.display = "none";
+      const shadowReveal = document.getElementById("shadowReveal");
+      level++;
+      localStorage.setItem("level", level);
+
+      if (named) {
+        let shadowIndex;
+        if (level <= 100) {
+          shadowIndex = Math.floor(level / 10) - 1;
+          if (!namedShadows[shadowIndex]) {
+            const name = namedShadowNames[shadowIndex];
+            namedShadows[shadowIndex] = { name, level: 1 };
+            shadowReveal.innerHTML = `You have summoned: <strong>${name} (Lv.1)</strong><br><button onclick='closeReveal()'>OK</button>`;
+          }
+        } else {
+          const upgradeIndex = ((level - 100) / 5) % 10;
+          shadowIndex = Math.floor(upgradeIndex);
+          if (namedShadows[shadowIndex]) {
+            namedShadows[shadowIndex].level++;
+            shadowReveal.innerHTML = `Your shadow <strong>${namedShadows[shadowIndex].name}</strong> has been upgraded to <strong>Level ${namedShadows[shadowIndex].level}</strong><br><button onclick='closeReveal()'>OK</button>`;
+          }
+        }
+        localStorage.setItem("namedShadows", JSON.stringify(namedShadows));
+      } else {
+        let gained = level * 2;
+        totalGeneralShadows += gained;
+        localStorage.setItem("totalGeneralShadows", totalGeneralShadows);
+        shadowReveal.innerHTML = `You have gained ${gained} general shadows<br><button onclick='closeReveal()'>OK</button>`;
+      }
+
+      shadowReveal.style.display = "block";
+      updateUI();
+    }
+
+    function closeReveal() {
+      document.getElementById("shadowReveal").style.display = "none";
+    }
+
+    function defeat() {
+      failures++;
+      localStorage.setItem("failures", failures);
+      alert("You gave in today. Level remains the same.");
+      updateUI();
+    }
+
+    function resetGame() {
+      level = 0;
+      namedShadows = [];
+      totalGeneralShadows = 0;
+      failures = 0;
+      localStorage.setItem("level", level);
+      localStorage.setItem("namedShadows", JSON.stringify(namedShadows));
+      localStorage.setItem("totalGeneralShadows", totalGeneralShadows);
+      localStorage.setItem("failures", failures);
+      updateUI();
+    }
+
+    updateUI();
+  </script>
+</body>
+</html>
