@@ -179,12 +179,16 @@
   <div id="shadowReveal"></div>
   <script>
     const namedShadowNames = ["Temptress", "Crave", "Desire", "Siren", "Ecstasy", "Obsession", "Flesh", "Sin", "Envy", "Madness"];
-    let level = parseInt(localStorage.getItem("level")) || 0;
-    let namedShadows = JSON.parse(localStorage.getItem("namedShadows")) || [];
-    let totalGeneralShadows = parseInt(localStorage.getItem("totalGeneralShadows")) || 0;
-    let failures = parseInt(localStorage.getItem("failures")) || 0;
-    let lustGiantLevel = parseInt(localStorage.getItem("lustGiantLevel")) || 0;
-    let lustGiantSpent = parseInt(localStorage.getItem("lustGiantSpent")) || 0;
+    // Add default value parsing from localStorage (to persist across refresh)
+let level = parseInt(localStorage.getItem("level")) || 0;
+let namedShadows = JSON.parse(localStorage.getItem("namedShadows")) || [];
+let totalGeneralShadows = parseInt(localStorage.getItem("totalGeneralShadows")) || 0;
+let failures = parseInt(localStorage.getItem("failures")) || 0;
+let lustGiantLevel = parseInt(localStorage.getItem("lustGiantLevel")) || 0;
+let lustGiantSpent = parseInt(localStorage.getItem("lustGiantSpent")) || 0;
+
+// Update UI immediately after reloading to reflect persisted values
+updateUI();
 
     // Updated updateUI() to place Lust Giant at the bottom
 function updateUI() {
@@ -316,7 +320,7 @@ if (!namedShadows[shadowIndex]) {
       localStorage.setItem("failures", failures);
       localStorage.setItem("totalGeneralShadows", totalGeneralShadows);
       const shadowReveal = document.getElementById("shadowReveal");
-      shadowReveal.innerHTML = `You gave in today. Level remains the same.<br>You lost <strong>${lost}</strong> shadow soldiers.<br><button onclick='closeReveal()'>OK</button>`;
+      shadowReveal.innerHTML = `You gave in today.<br>You lost <strong>${lost}</strong> shadow soldiers.<br><button onclick='closeReveal()'>OK</button>`;
       shadowReveal.style.display = "block";
       updateUI();
     }
