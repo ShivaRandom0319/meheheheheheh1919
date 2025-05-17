@@ -2,27 +2,35 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
   <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@500;700&display=swap" rel="stylesheet">
-  <style>
-    body {
-      font-family: 'Montserrat', sans-serif;
-      background: #0b0c10;
-      color: #c5c6c7;
+ <style>
+    * {
+      box-sizing: border-box;
       margin: 0;
       padding: 0;
+    }
+
+    body {
+      font-family: 'Montserrat', sans-serif;
+      background: linear-gradient(135deg, #0b0c10, #1f2833);
+      color: #c5c6c7;
       display: flex;
-      flex-direction: row;
-      flex-wrap: wrap;
+      min-height: 100vh;
+      overflow-x: hidden;
     }
 
     nav {
       width: 250px;
-      background-color: #1f2833;
+      background: linear-gradient(to bottom, #1f2833, #0b0c10);
       padding: 20px;
-      box-shadow: 5px 0 15px rgba(0, 255, 255, 0.2);
-      height: 100vh;
-      box-sizing: border-box;
+      box-shadow: 5px 0 20px rgba(102, 252, 241, 0.2);
+      position: fixed;
+      left: 0;
+      top: 0;
+      bottom: 0;
+      overflow-y: auto;
     }
 
     nav h2 {
@@ -30,6 +38,7 @@
       font-size: 24px;
       margin-bottom: 20px;
       text-align: center;
+      text-shadow: 0 0 5px #66fcf1;
     }
 
     .named-shadow {
@@ -37,28 +46,39 @@
       color: #c5c6c7;
       margin: 10px 0;
       text-align: center;
+      background-color: #0b0c10;
+      padding: 10px;
+      border-radius: 8px;
+      box-shadow: 0 0 10px rgba(69, 162, 158, 0.4);
+      transition: transform 0.2s;
+    }
+
+    .named-shadow:hover {
+      transform: scale(1.05);
+      background-color: #1f2833;
     }
 
     main {
-      flex-grow: 1;
+      margin-left: 250px;
+      width: calc(100% - 250px);
+      padding: 40px;
       text-align: center;
-      padding: 50px;
-      box-sizing: border-box;
-      min-width: 300px;
     }
 
     h1 {
       color: #66fcf1;
+      font-size: 36px;
       margin-bottom: 30px;
+      text-shadow: 0 0 10px #66fcf1;
     }
 
     .dashboard {
-      background-color: #1f2833;
-      padding: 20px;
-      border-radius: 10px;
+      background: rgba(31, 40, 51, 0.95);
+      padding: 30px;
+      border-radius: 15px;
       max-width: 600px;
       margin: auto;
-      box-shadow: 0 0 20px #45a29e;
+      box-shadow: 0 0 25px #45a29e;
     }
 
     .dashboard p {
@@ -67,15 +87,22 @@
     }
 
     .actions button {
-      background-color: #66fcf1;
+      background: radial-gradient(circle, #66fcf1, #45a29e);
       color: #0b0c10;
       font-size: 18px;
-      padding: 12px 30px;
+      padding: 12px 25px;
       margin: 15px;
       border: none;
-      border-radius: 5px;
+      border-radius: 8px;
       cursor: pointer;
       font-weight: bold;
+      box-shadow: 0 0 10px rgba(102, 252, 241, 0.5);
+      transition: transform 0.2s, box-shadow 0.2s;
+    }
+
+    .actions button:hover {
+      transform: scale(1.05);
+      box-shadow: 0 0 20px rgba(102, 252, 241, 0.7);
     }
 
     #notification, #shadowReveal {
@@ -86,13 +113,14 @@
       background: #1f2833;
       color: #fff;
       padding: 40px;
-      border-radius: 10px;
+      border-radius: 12px;
       font-size: 24px;
       display: none;
       box-shadow: 0 0 20px #45a29e;
       z-index: 1000;
       text-align: center;
       max-width: 90%;
+      animation: pulse 0.5s ease-in-out;
     }
 
     #notification button, #shadowReveal button {
@@ -106,6 +134,13 @@
       display: block;
       margin-left: auto;
       margin-right: auto;
+      box-shadow: 0 0 10px rgba(69, 162, 158, 0.5);
+    }
+
+    @keyframes pulse {
+      0% { transform: scale(0.95) translate(-50%, -50%); opacity: 0.8; }
+      50% { transform: scale(1.05) translate(-50%, -50%); opacity: 1; }
+      100% { transform: scale(1) translate(-50%, -50%); opacity: 1; }
     }
 
     @media screen and (max-width: 768px) {
@@ -116,14 +151,57 @@
       nav {
         width: 100%;
         height: auto;
+        position: relative;
         box-shadow: none;
-        text-align: center;
       }
 
       main {
+        margin-left: 0;
+        width: 100%;
         padding: 20px;
       }
     }
+    #shadowReveal {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background: linear-gradient(145deg, #1c1f26, #262c36);
+    color: #66fcf1;
+    padding: 40px;
+    border-radius: 20px;
+    font-size: 24px;
+    display: none;
+    box-shadow: 0 0 40px #45a29e;
+    z-index: 1000;
+    text-align: center;
+    max-width: 90%;
+    animation: fadeIn 0.3s ease-in-out;
+  }
+
+  #shadowReveal button {
+    margin-top: 25px;
+    padding: 12px 25px;
+    font-size: 18px;
+    background: #66fcf1;
+    border: none;
+    color: #0b0c10;
+    font-weight: bold;
+    border-radius: 10px;
+    box-shadow: 0 0 15px rgba(102, 252, 241, 0.6);
+    cursor: pointer;
+    transition: background 0.2s ease, transform 0.2s ease;
+  }
+
+  #shadowReveal button:hover {
+    background: #45a29e;
+    transform: scale(1.05);
+  }
+
+  @keyframes fadeIn {
+    from { opacity: 0; transform: scale(0.95) translate(-50%, -50%); }
+    to { opacity: 1; transform: scale(1) translate(-50%, -50%); }
+  }
   </style>
 </head>
 <body>
@@ -143,6 +221,7 @@
         <button onclick="resist()">I Resisted</button>
         <button onclick="defeat()">Defeat</button>
         <button onclick="resetGame()">Reset</button>
+        <button onclick="forgeLustGiant()">Forge/Upgrade Temptation Titan</button>
       </div>
     </div>
   </main>
@@ -156,6 +235,8 @@
     let namedShadows = JSON.parse(localStorage.getItem("namedShadows")) || [];
     let totalGeneralShadows = parseInt(localStorage.getItem("totalGeneralShadows")) || 0;
     let failures = parseInt(localStorage.getItem("failures")) || 0;
+    let lustGiantLevel = parseInt(localStorage.getItem("lustGiantLevel")) || 0;
+    let lustGiantSpent = parseInt(localStorage.getItem("lustGiantSpent")) || 0;
 
     function updateUI() {
       document.getElementById("level").textContent = level;
@@ -171,6 +252,12 @@
         p.textContent = `${shadow.name} (Lv.${shadow.level})`;
         shadowListEl.appendChild(p);
       });
+      if (lustGiantLevel > 0) {
+        const p = document.createElement("p");
+        p.className = "named-shadow";
+        p.textContent = `Temptation Titan (Lv.${lustGiantLevel})`;
+        shadowListEl.appendChild(p);
+      }
     }
 
     function getRank(lvl) {
@@ -225,26 +312,55 @@
       updateUI();
     }
 
+    function forgeLustGiant() {
+  const nextCost = 1000 * Math.pow(2, lustGiantLevel);
+  const shadowReveal = document.getElementById("shadowReveal");
+  if (totalGeneralShadows >= nextCost) {
+    totalGeneralShadows -= nextCost;
+    lustGiantLevel++;
+    lustGiantSpent += nextCost;
+    localStorage.setItem("lustGiantLevel", lustGiantLevel);
+    localStorage.setItem("lustGiantSpent", lustGiantSpent);
+    localStorage.setItem("totalGeneralShadows", totalGeneralShadows);
+    shadowReveal.innerHTML = `Temptation Titan has been forged/upgraded to <strong>Level ${lustGiantLevel}</strong><br><button onclick='closeReveal()'>OK</button>`;
+    shadowReveal.style.display = "block";
+    updateUI();
+  } else {
+    shadowReveal.innerHTML = `You need ${nextCost} shadow soldiers to upgrade Temptation Titan.<br><button onclick='closeReveal()'>OK</button>`;
+    shadowReveal.style.display = "block";
+  }
+}
+
     function closeReveal() {
       document.getElementById("shadowReveal").style.display = "none";
     }
 
-    function defeat() {
-      failures++;
-      localStorage.setItem("failures", failures);
-      alert("You gave in today. Level remains the same.");
-      updateUI();
-    }
+function defeat() {
+  failures++;
+  const lost = Math.floor(totalGeneralShadows / 2);
+  totalGeneralShadows -= lost;
+  localStorage.setItem("failures", failures);
+  localStorage.setItem("totalGeneralShadows", totalGeneralShadows);
+  const shadowReveal = document.getElementById("shadowReveal");
+  shadowReveal.innerHTML = `You gave in today. <br>You lost <strong>${lost}</strong> shadow soldiers.<br><button onclick='closeReveal()'>OK</button>`;
+  shadowReveal.style.display = "block";
+  updateUI();
+}
+
 
     function resetGame() {
       level = 0;
       namedShadows = [];
       totalGeneralShadows = 0;
       failures = 0;
+      lustGiantLevel = 0;
+      lustGiantSpent = 0;
       localStorage.setItem("level", level);
       localStorage.setItem("namedShadows", JSON.stringify(namedShadows));
       localStorage.setItem("totalGeneralShadows", totalGeneralShadows);
       localStorage.setItem("failures", failures);
+      localStorage.setItem("lustGiantLevel", lustGiantLevel);
+      localStorage.setItem("lustGiantSpent", lustGiantSpent);
       updateUI();
     }
 
