@@ -226,7 +226,37 @@
     padding: 10px 16px;
   }
 }
+#notification, #shadowReveal {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  background: #1f2833;
+  color: #fff;
+  padding: 50px;
+  border-radius: 15px;
+  font-size: 26px;
+  display: none;
+  box-shadow: 0 0 30px #45a29e;
+  z-index: 1000;
+  text-align: center;
+  max-width: 95%;
+  width: 90%;
+}
 
+#notification button, #shadowReveal button {
+  margin-top: 25px;
+  padding: 12px 24px;
+  font-size: 20px;
+  background: #45a29e;
+  border: none;
+  color: #0b0c10;
+  border-radius: 8px;
+  display: block;
+  margin-left: auto;
+  margin-right: auto;
+  box-shadow: 0 0 10px rgba(69, 162, 158, 0.5);
+}
   </style>
 </head>
 <body>
