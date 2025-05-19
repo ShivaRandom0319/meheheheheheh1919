@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   
   <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@500;700&display=swap" rel="stylesheet">
   <style>
@@ -17,7 +17,6 @@
       color: #c5c6c7;
       display: flex;
       min-height: 100vh;
-      overflow-x: hidden;
     }
     nav {
       width: 250px;
@@ -108,7 +107,6 @@
       z-index: 1000;
       text-align: center;
       max-width: 90%;
-      animation: fadeIn 0.3s ease-in-out;
     }
     #notification button, #shadowReveal button {
       margin-top: 20px;
@@ -118,10 +116,25 @@
       border: none;
       color: #0b0c10;
       border-radius: 5px;
-      display: block;
-      margin-left: auto;
-      margin-right: auto;
       box-shadow: 0 0 10px rgba(69, 162, 158, 0.5);
+    }
+    .aura-bar {
+      width: 100%;
+      background-color: #0b0c10;
+      border: 1px solid #45a29e;
+      border-radius: 10px;
+      overflow: hidden;
+      margin: 10px 0;
+    }
+    .aura-fill {
+      height: 20px;
+      background: linear-gradient(90deg, #66fcf1, #45a29e);
+      transition: width 0.5s ease-in-out;
+    }
+    .toxicity-fill {
+      height: 20px;
+      background: linear-gradient(90deg, #ff0044, #a00028);
+      transition: width 0.5s ease-in-out;
     }
     .shadow-arrival {
       position: fixed;
@@ -141,17 +154,14 @@
       z-index: 2000;
     }
     @keyframes summonShadow {
-      0% { transform: translateX(-50%) translateY(20px); opacity: 0; }
-      100% { transform: translateX(-50%) translateY(0); opacity: 1; }
-    }
-    @keyframes fadeIn {
-      from { opacity: 0; transform: scale(0.95) translate(-50%, -50%); }
-      to { opacity: 1; transform: scale(1) translate(-50%, -50%); }
-    }
-    @media screen and (max-width: 768px) {
-      body { flex-direction: column; }
-      nav { width: 100%; height: auto; position: relative; box-shadow: none; }
-      main { margin-left: 0; width: 100%; padding: 20px; }
+      0% {
+        transform: translateX(-50%) translateY(20px);
+        opacity: 0;
+      }
+      100% {
+        transform: translateX(-50%) translateY(0);
+        opacity: 1;
+      }
     }
   </style>
 </head>
@@ -161,82 +171,65 @@
     <div id="namedShadowList"></div>
   </nav>
   <main>
-    <h1>Dashboard</h1>
+    <h1>Solo Slayer</h1>
+    <h1>It's Nature, See it as it is</h1>
     <div class="dashboard">
       <p><strong>Level:</strong> <span id="level">0</span></p>
       <p><strong>Rank:</strong> <span id="rank">E</span></p>
       <p><strong>General Shadows:</strong> <span id="shadows">0</span></p>
       <p><strong>Failures:</strong> <span id="failures">0</span></p>
+      <p><strong>Overall Aura:</strong> <span id="aura">0</span>%</p>
+      <div class="aura-bar"><div id="auraFill" class="aura-fill"></div></div>
+      <p><strong>Toxicity:</strong> <span id="toxicity">0</span>%</p>
+      <div class="aura-bar"><div id="toxicityFill" class="toxicity-fill"></div></div>
       <div class="actions">
         <button onclick="resist()">I Resisted</button>
         <button onclick="defeat()">Defeat</button>
         <button onclick="resetGame()">Reset</button>
-        <!--<button onclick="resetGame()">Reset</button>-->
         <button onclick="forgeLustGiant()">Forge/Upgrade Zeno</button>
       </div>
     </div>
   </main>
   <div id="notification"></div>
   <div id="shadowReveal"></div>
+
   <script>
     const namedShadowNames = ["Temptress", "Crave", "Desire", "Siren", "Ecstasy", "Obsession", "Flesh", "Sin", "Envy", "Madness"];
-    // Add default value parsing from localStorage (to persist across refresh)
-let level = parseInt(localStorage.getItem("level")) || 0;
-let namedShadows = JSON.parse(localStorage.getItem("namedShadows")) || [];
-let totalGeneralShadows = parseInt(localStorage.getItem("totalGeneralShadows")) || 0;
-let failures = parseInt(localStorage.getItem("failures")) || 0;
-let lustGiantLevel = parseInt(localStorage.getItem("lustGiantLevel")) || 0;
-let lustGiantSpent = parseInt(localStorage.getItem("lustGiantSpent")) || 0;
+    let level = parseInt(localStorage.getItem("level")) || 0;
+    let namedShadows = JSON.parse(localStorage.getItem("namedShadows")) || [];
+    let totalGeneralShadows = parseInt(localStorage.getItem("totalGeneralShadows")) || 0;
+    let failures = parseInt(localStorage.getItem("failures")) || 0;
+    let lustGiantLevel = parseInt(localStorage.getItem("lustGiantLevel")) || 0;
+    let lustGiantSpent = parseInt(localStorage.getItem("lustGiantSpent")) || 0;
+    let actionHistory = JSON.parse(localStorage.getItem("actionHistory")) || [];
 
-// Update UI immediately after reloading to reflect persisted values
-updateUI();
+    function updateUI() {
+      document.getElementById("level").textContent = level;
+      document.getElementById("shadows").textContent = totalGeneralShadows;
+      document.getElementById("rank").textContent = getRank(level);
+      document.getElementById("failures").textContent = failures;
+      updateAuraDisplay();
 
-    // Updated updateUI() to place Lust Giant at the bottom
-function updateUI() {
-  document.getElementById("level").textContent = level;
-  document.getElementById("shadows").textContent = totalGeneralShadows;
-  document.getElementById("rank").textContent = getRank(level);
-  document.getElementById("failures").textContent = failures;
-
-  const shadowListEl = document.getElementById("namedShadowList");
-  shadowListEl.innerHTML = "";
-
-  // Ensure summonLevel is initialized for sorting
-  namedShadows.forEach((s, i) => {
-    if (!s.summonLevel) {
-      s.summonLevel = (i + 1) * 10;
+      const shadowListEl = document.getElementById("namedShadowList");
+      shadowListEl.innerHTML = "";
+      namedShadows.forEach((s, i) => {
+        if (!s.summonLevel) s.summonLevel = (i + 1) * 10;
+      });
+      const sortedNamed = [...namedShadows].sort((a, b) => b.summonLevel - a.summonLevel);
+      sortedNamed.forEach((shadow) => {
+        const p = document.createElement("p");
+        p.className = "named-shadow";
+        p.textContent = `${shadow.name} (Lv.${shadow.level})`;
+        shadowListEl.appendChild(p);
+      });
+      if (lustGiantLevel > 0) {
+        const p = document.createElement("p");
+        p.className = "named-shadow";
+        p.textContent = `Zeno (Lv.${lustGiantLevel})`;
+        shadowListEl.appendChild(p);
+      }
     }
-  });
 
-  // Sort named shadows descending by summon level
-  const sortedNamed = [...namedShadows].sort((a, b) => b.summonLevel - a.summonLevel);
-  sortedNamed.forEach((shadow) => {
-    const p = document.createElement("p");
-    p.className = "named-shadow";
-    p.textContent = `${shadow.name} (Lv.${shadow.level})`;
-    shadowListEl.appendChild(p);
-  });
-
-  // Append Lust Giant last
-  if (lustGiantLevel > 0) {
-    const p = document.createElement("p");
-    p.className = "named-shadow";
-    p.textContent = `Zeno (Lv.${lustGiantLevel})`;
-    shadowListEl.appendChild(p);
-  }
-
-  localStorage.setItem("namedShadows", JSON.stringify(namedShadows));
-}
-
-// Ensure named shadow includes summonLevel at creation
-if (!namedShadows[shadowIndex]) {
-  const name = namedShadowNames[shadowIndex];
-  namedShadows[shadowIndex] = { name, level: 1, summonLevel: level };
-  showShadowArrival(`Summoned: ${name}`);
-  shadowReveal.innerHTML = `You have summoned: <strong>${name} (Lv.1)</strong><br><button onclick='closeReveal()'>OK</button>`;
-}
-
-// All other app logic remains unchanged
     function getRank(lvl) {
       if (lvl >= 75) return "S";
       if (lvl >= 50) return "A";
@@ -247,11 +240,12 @@ if (!namedShadows[shadowIndex]) {
     }
 
     function resist() {
+      actionHistory.push("resist");
+      localStorage.setItem("actionHistory", JSON.stringify(actionHistory));
       const nextLevel = level + 1;
-      const isNamedShadowEvent = (nextLevel <= 100 && nextLevel % 10 === 0) || (nextLevel > 100 && (nextLevel - 100) % 5 === 0);
-      const notification = document.getElementById("notification");
-      notification.innerHTML = isNamedShadowEvent ? `A Named Shadow awaits your command<br><button onclick='arise(true)'>Arise</button>` : `${nextLevel * 2} Shadows await your command<br><button onclick='arise(false)'>Arise</button>`;
-      notification.style.display = "block";
+      const isNamed = (nextLevel <= 100 && nextLevel % 10 === 0) || (nextLevel > 100 && (nextLevel - 100) % 5 === 0);
+      document.getElementById("notification").innerHTML = isNamed ? `A Named Shadow awaits your command<br><button onclick='arise(true)'>Arise</button>` : `${nextLevel * 2} Shadows await your command<br><button onclick='arise(false)'>Arise</button>`;
+      document.getElementById("notification").style.display = "block";
     }
 
     function arise(named) {
@@ -261,26 +255,76 @@ if (!namedShadows[shadowIndex]) {
       localStorage.setItem("level", level);
       if (named) {
         const shadowIndex = Math.floor(level / 10) - 1;
-        const name = namedShadowNames[shadowIndex];
         if (!namedShadows[shadowIndex]) {
+          const name = namedShadowNames[shadowIndex];
           namedShadows[shadowIndex] = { name, level: 1, summonLevel: level };
-          shadowReveal.innerHTML = `You have summoned: <strong>${name} (Lv.1)</strong><br><button onclick='closeReveal()'>OK</button>`;
           showShadowArrival(`Summoned: ${name}`);
+          shadowReveal.innerHTML = `You have summoned: <strong>${name} (Lv.1)</strong><br><button onclick='closeReveal()'>OK</button>`;
         } else {
           namedShadows[shadowIndex].level++;
-          shadowReveal.innerHTML = `Upgraded: <strong>${namedShadows[shadowIndex].name}</strong> to <strong>Lv.${namedShadows[shadowIndex].level}</strong><br><button onclick='closeReveal()'>OK</button>`;
           showShadowArrival(`Upgraded: ${namedShadows[shadowIndex].name}`);
+          shadowReveal.innerHTML = `Your shadow <strong>${namedShadows[shadowIndex].name}</strong> has been upgraded to <strong>Level ${namedShadows[shadowIndex].level}</strong><br><button onclick='closeReveal()'>OK</button>`;
         }
         localStorage.setItem("namedShadows", JSON.stringify(namedShadows));
       } else {
         const gained = level * 2;
         totalGeneralShadows += gained;
         localStorage.setItem("totalGeneralShadows", totalGeneralShadows);
-        shadowReveal.innerHTML = `You have gained ${gained} shadow soldiers<br><button onclick='closeReveal()'>OK</button>`;
         showShadowArrival(`+${gained} Shadow Soldiers`);
+        shadowReveal.innerHTML = `You have gained ${gained} general shadows<br><button onclick='closeReveal()'>OK</button>`;
       }
       shadowReveal.style.display = "block";
       updateUI();
+    }
+
+    function defeat() {
+      failures++;
+      actionHistory.push("defeat");
+      level = Math.max(level - 1, 0);
+      const lost = Math.floor(totalGeneralShadows / 2);
+      totalGeneralShadows -= lost;
+      localStorage.setItem("level", level);
+      localStorage.setItem("failures", failures);
+      localStorage.setItem("totalGeneralShadows", totalGeneralShadows);
+      localStorage.setItem("actionHistory", JSON.stringify(actionHistory));
+      const shadowReveal = document.getElementById("shadowReveal");
+      shadowReveal.innerHTML = `You gave in today. <br>Level decreased to <strong>${level}</strong>.<br>You lost <strong>${lost}</strong> shadow soldiers.<br><button onclick='closeReveal()'>OK</button>`;
+      shadowReveal.style.display = "block";
+      updateUI();
+    }
+
+    function forgeLustGiant() {
+      const nextCost = 1000 * Math.pow(2, lustGiantLevel);
+      if (totalGeneralShadows >= nextCost) {
+        totalGeneralShadows -= nextCost;
+        lustGiantLevel++;
+        lustGiantSpent += nextCost;
+        localStorage.setItem("lustGiantLevel", lustGiantLevel);
+        localStorage.setItem("lustGiantSpent", lustGiantSpent);
+        localStorage.setItem("totalGeneralShadows", totalGeneralShadows);
+        showShadowArrival(`Zeno upgraded to Lv.${lustGiantLevel}`);
+        updateUI();
+      } else {
+        const shadowReveal = document.getElementById("shadowReveal");
+        shadowReveal.innerHTML = `You need ${nextCost} shadow soldiers to upgrade Zeno.<br><button onclick='closeReveal()'>OK</button>`;
+        shadowReveal.style.display = "block";
+      }
+    }
+
+    function resetGame() {
+      level = 0;
+      namedShadows = [];
+      totalGeneralShadows = 0;
+      failures = 0;
+      lustGiantLevel = 0;
+      lustGiantSpent = 0;
+      actionHistory = [];
+      localStorage.clear();
+      updateUI();
+    }
+
+    function closeReveal() {
+      document.getElementById("shadowReveal").style.display = "none";
     }
 
     function showShadowArrival(text) {
@@ -291,50 +335,15 @@ if (!namedShadows[shadowIndex]) {
       setTimeout(() => el.remove(), 3000);
     }
 
-    function forgeLustGiant() {
-      const nextCost = 1000 * Math.pow(2, lustGiantLevel);
-      const shadowReveal = document.getElementById("shadowReveal");
-      if (totalGeneralShadows >= nextCost) {
-        totalGeneralShadows -= nextCost;
-        lustGiantLevel++;
-        lustGiantSpent += nextCost;
-        localStorage.setItem("lustGiantLevel", lustGiantLevel);
-        localStorage.setItem("lustGiantSpent", lustGiantSpent);
-        localStorage.setItem("totalGeneralShadows", totalGeneralShadows);
-        shadowReveal.innerHTML = `Zeno upgraded to <strong>Lv.${lustGiantLevel}</strong><br><button onclick='closeReveal()'>OK</button>`;
-        showShadowArrival(`Lust Giant Lv.${lustGiantLevel}`);
-      } else {
-        shadowReveal.innerHTML = `You need ${nextCost} shadow soldiers to upgrade Zeno.<br><button onclick='closeReveal()'>OK</button>`;
-      }
-      shadowReveal.style.display = "block";
-      updateUI();
-    }
-
-    function closeReveal() {
-      document.getElementById("shadowReveal").style.display = "none";
-    }
-
-    function defeat() {
-      failures++;
-      const lost = Math.floor(totalGeneralShadows / 2);
-      totalGeneralShadows -= lost;
-      localStorage.setItem("failures", failures);
-      localStorage.setItem("totalGeneralShadows", totalGeneralShadows);
-      const shadowReveal = document.getElementById("shadowReveal");
-      shadowReveal.innerHTML = `You gave in today.<br>You lost <strong>${lost}</strong> shadow soldiers.<br><button onclick='closeReveal()'>OK</button>`;
-      shadowReveal.style.display = "block";
-      updateUI();
-    }
-
-    function resetGame() {
-      level = 0;
-      namedShadows = [];
-      totalGeneralShadows = 0;
-      failures = 0;
-      lustGiantLevel = 0;
-      lustGiantSpent = 0;
-      localStorage.clear();
-      updateUI();
+    function updateAuraDisplay() {
+      const total = actionHistory.length;
+      const resistCount = actionHistory.filter(a => a === "resist").length;
+      const aura = total ? Math.round((resistCount / total) * 100) : 100;
+      const toxicity = 100 - aura;
+      document.getElementById("aura").textContent = aura;
+      document.getElementById("toxicity").textContent = toxicity;
+      document.getElementById("auraFill").style.width = `${aura}%`;
+      document.getElementById("toxicityFill").style.width = `${toxicity}%`;
     }
 
     updateUI();
