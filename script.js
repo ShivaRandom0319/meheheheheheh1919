@@ -1,6 +1,5 @@
 /* =======================================================
-   SOLO SLAYER – COMPLETE SCRIPT (2025-05-22)
-   • Roadmap level info now uses the same centre pop-up
+   SOLO SLAYER  –  SCRIPT (Roadmap simplified)
    ======================================================= */
 
 /* ---------- CONSTANTS ---------- */
@@ -21,8 +20,8 @@ let level        = +localStorage.getItem("level")      || 0;
 let totalGen     = +localStorage.getItem("totalGen")   || 0;
 let failures     = +localStorage.getItem("failures")   || 0;
 let zenosLevel   = +localStorage.getItem("zenosLevel") || 0;
-let history      = JSON.parse(localStorage.getItem("hist") || "[]");
-let named        = JSON.parse(localStorage.getItem("named") || "[]");
+let history      = JSON.parse(localStorage.getItem("hist")   || "[]");
+let named        = JSON.parse(localStorage.getItem("named")  || "[]");
 while (named.length < NAMED_COUNT) named.push({ level:0 });
 
 let abilityStatus = JSON.parse(localStorage.getItem("abilities") || "[]");
@@ -31,10 +30,13 @@ while (abilityStatus.length < ABILITIES.length) abilityStatus.push(false);
 /* ---------- HELPERS ---------- */
 const $ = id => document.getElementById(id);
 const rank = lv => lv>=75?"S":lv>=50?"A":lv>=35?"B":lv>=20?"C":lv>=10?"D":"E";
-const isNamedLevel = lv => (lv<=100 && lv%10===0) || (lv>100 && (lv-100)%5===0);
-const idxFor = lv => lv<=100 ? lv/10 - 1 : ((lv-105)/5) % NAMED_COUNT;
 
-/* ---------- GENERIC POP-UPS ---------- */
+/* ---------- POP-UPS ---------- */
+function showPopup(html){
+  $("shadowReveal").innerHTML=html;
+  $("shadowReveal").style.display="block";
+}
+function closePopup(){ $("shadowReveal").style.display="none"; }
 function banner(msg){
   const d=document.createElement("div");
   d.className="shadow-arrival";
@@ -42,21 +44,21 @@ function banner(msg){
   document.body.appendChild(d);
   setTimeout(()=>d.remove(),3000);
 }
-function showPopup(html){
-  $("shadowReveal").innerHTML=html;
-  $("shadowReveal").style.display="block";
-}
-function closePopup(){ $("shadowReveal").style.display="none"; }
-function closeAbilityDialog(){ $("abilityUnlock").style.display="none"; }
 
-/* ---------- ABILITY UNLOCK ---------- */
-function checkAbilityUnlock(prev,curr){
+/* ---------- ABILITY POP-UP ---------- */
+function notifyAbility(idx){
+  $("abilityUnlock").innerHTML=
+    `<strong>${ABILITIES[idx].name}</strong> unlocked!<br><button onclick="$('abilityUnlock').style.display='none'">OK</button>`;
+  $("abilityUnlock").style.display="block";
+}
+
+/* ---------- ABILITY CHECK ---------- */
+function checkAbility(prev,curr){
   ABILITIES.forEach((ab,i)=>{
     if(!abilityStatus[i] && prev<ab.unlock && curr>=ab.unlock){
       abilityStatus[i]=true;
       localStorage.setItem("abilities",JSON.stringify(abilityStatus));
-      $("abilityUnlock").innerHTML=`<strong>${ab.name}</strong> unlocked!<br><button onclick="closeAbilityDialog()">OK</button>`;
-      $("abilityUnlock").style.display="block";
+      notifyAbility(i);
     }
   });
 }
@@ -81,12 +83,14 @@ function updateUI(){
   if($("armyOverlay").style.display==="block")      buildArmy();
 }
 
-/* ---------- CORE ACTIONS ---------- */
+/* ---------- CORE GAMEPLAY ---------- */
 function resist(){
   history.push("resist"); localStorage.setItem("hist",JSON.stringify(history));
   const next=level+1;
 
-  if(isNamedLevel(next)){
+  if(next%10===0 && next<=100){          // named level (≤100)
+    performNamedUpgrade(next,true);
+  }else if(next>100 && (next-100)%5===0){
     performNamedUpgrade(next,true);
   }else{
     showPopup(`${next*2} shadow soldiers await<br><button onclick="collectSoldiers()">Arise</button>`);
@@ -95,7 +99,7 @@ function resist(){
 function collectSoldiers(){
   closePopup();
   const prev=level;
-  level++; localStorage.setItem("level",level); checkAbilityUnlock(prev,level);
+  level++; localStorage.setItem("level",level); checkAbility(prev,level);
 
   const gain=level*2;
   totalGen+=gain; localStorage.setItem("totalGen",totalGen);
@@ -105,9 +109,10 @@ function collectSoldiers(){
   updateUI();
 }
 function performNamedUpgrade(targetLevel,auto){
-  const idx=idxFor(targetLevel), nm=NAMES[idx];
+  const idx = targetLevel<=100 ? targetLevel/10-1 : ( (targetLevel-105)/5 )%10;
+  const nm  = NAMES[idx];
   const prev=level;
-  level++; if(auto) localStorage.setItem("level",level); checkAbilityUnlock(prev,level);
+  level++; if(auto) localStorage.setItem("level",level); checkAbility(prev,level);
 
   if(named[idx].level===0){
     named[idx].level=1;
@@ -150,51 +155,33 @@ function resetGame(){
   localStorage.clear();
   localStorage.setItem("abilities",JSON.stringify(abilityStatus));
   document.querySelectorAll(".overlay").forEach(o=>o.style.display="none");
-  closePopup(); closeAbilityDialog();
+  closePopup(); $("abilityUnlock").style.display="none";
   updateUI();
 }
 
-/* ---------- ROADMAP ---------- */
+/* ---------- ROADMAP (list) ---------- */
 function toggleRoadmap(){
   const ov=$("roadmapOverlay");
   ov.style.display=ov.style.display==="block"?"none":"block";
   if(ov.style.display==="block") buildRoadmap();
 }
 function buildRoadmap(){
-  const msg=$("roadmapMsg"), grid=$("roadmapGrid");
-  if(level>=100){
-    msg.textContent="You are good to go and named solders will get upgraded every fifth level";
-    grid.style.display="none";
-    return;
-  }
-  msg.textContent=""; grid.style.display="grid"; grid.innerHTML="";
-  const base=level===0?1:Math.floor(level/100)*100+1;
-  for(let i=base;i<base+100;i++){
-    const box=document.createElement("div");
-    box.className="grid-box"; box.textContent=i;
-    if(i<=level) box.classList.add("highlight");
-    if(isNamedLevel(i)) box.classList.add("named");
-    box.onclick=()=>roadmapClick(i);
-    grid.appendChild(box);
-  }
-}
-function roadmapClick(lv){
-  let html;
-  if(isNamedLevel(lv)){
-    const idx=idxFor(lv), nm=NAMES[idx], cur=named[idx].level;
-    html = lv<=level
-      ? `${nm} is Level ${cur||1}`
-      : `${nm} gets upgraded to Level ${cur+1}`;
-  }else{
-    const val=lv*2;
-    html = lv<=level
-      ? `Gained ${val} soldiers at Level ${lv}`
-      : `Will gain ${val} soldiers`;
-  }
-  showPopup(`${html}<br><button onclick="closePopup()">OK</button>`);
+  $("roadmapMsg").textContent = level>=100
+    ? "You are good to go and named solders will get upgraded every fifth level"
+    : "";
+
+  const list=$("roadmapList"); list.innerHTML="";
+  NAMES.forEach((nm,i)=>{
+    const unlock=(i+1)*10;
+    const div=document.createElement("div");
+    div.className="roadmap-item";
+    if(level>=unlock) div.classList.add("unlocked");
+    div.innerHTML=`<span>${nm}</span><span>Level ${unlock}</span>`;
+    list.appendChild(div);
+  });
 }
 
-/* ---------- SHADOW ARMY ---------- */
+/* ---------- SHADOW ARMY LIST ---------- */
 function toggleNamed(){
   const ov=$("namedOverlay");
   ov.style.display=ov.style.display==="block"?"none":"block";
@@ -218,7 +205,7 @@ function buildNamed(){
   }
 }
 
-/* ---------- ABILITIES ---------- */
+/* ---------- ABILITIES LIST ---------- */
 function toggleAbilities(){
   const ov=$("abilitiesOverlay");
   ov.style.display=ov.style.display==="block"?"none":"block";
@@ -229,14 +216,13 @@ function buildAbilities(){
   ABILITIES.forEach((ab,i)=>{
     const div=document.createElement("div");
     div.className="ability-item";
-    const unlocked=level>=ab.unlock;
-    if(unlocked) div.classList.add("unlocked");
-    div.innerHTML=`<span>${ab.name} (Unlocks at Level ${ab.unlock})</span><span>${unlocked?"Unlocked":"Locked"}</span>`;
+    if(level>=ab.unlock) div.classList.add("unlocked");
+    div.innerHTML=`<span>${ab.name} (Unlocks at Level ${ab.unlock})</span><span>${level>=ab.unlock?"Unlocked":"Locked"}</span>`;
     list.appendChild(div);
   });
 }
 
-/* ---------- MY-ARMY ---------- */
+/* ---------- MY-ARMY VISUAL ---------- */
 function toggleArmy(){
   const ov=$("armyOverlay");
   ov.style.display=ov.style.display==="block"?"none":"block";
@@ -280,13 +266,3 @@ function buildArmy(){
 
 /* ---------- INIT ---------- */
 updateUI();
-
-/* fast-upgrade for post-100 named squares */
-document.addEventListener("click",e=>{
-  if(e.target.classList.contains("grid-box")){
-    const val=+e.target.textContent;
-    if(isNamedLevel(val)&&val===level+1&&val>100){
-      performNamedUpgrade(val,true);
-    }
-  }
-});
