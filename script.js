@@ -1,7 +1,6 @@
 /* =======================================================
    SOLO SLAYER – COMPLETE SCRIPT (2025-05-22)
-   • Roadmap dialog behaviour updated
-   • “Zenos” wording everywhere
+   • Roadmap level info now uses the same centre pop-up
    ======================================================= */
 
 /* ---------- CONSTANTS ---------- */
@@ -18,10 +17,10 @@ const ABILITIES = [
 ];
 
 /* ---------- PERSISTED STATE ---------- */
-let level        = +localStorage.getItem("level")       || 0;
-let totalGen     = +localStorage.getItem("totalGen")    || 0;
-let failures     = +localStorage.getItem("failures")    || 0;
-let zenosLevel   = +localStorage.getItem("zenosLevel")  || 0;
+let level        = +localStorage.getItem("level")      || 0;
+let totalGen     = +localStorage.getItem("totalGen")   || 0;
+let failures     = +localStorage.getItem("failures")   || 0;
+let zenosLevel   = +localStorage.getItem("zenosLevel") || 0;
 let history      = JSON.parse(localStorage.getItem("hist") || "[]");
 let named        = JSON.parse(localStorage.getItem("named") || "[]");
 while (named.length < NAMED_COUNT) named.push({ level:0 });
@@ -43,12 +42,12 @@ function banner(msg){
   document.body.appendChild(d);
   setTimeout(()=>d.remove(),3000);
 }
-function closeReveal(){ $("shadowReveal").style.display="none"; }
-function closeAbilityDialog(){ $("abilityUnlock").style.display="none"; }
-function showAbilityDialog(name){
-  $("abilityUnlock").innerHTML=`<strong>${name}</strong> unlocked!<br><button onclick="closeAbilityDialog()">OK</button>`;
-  $("abilityUnlock").style.display="block";
+function showPopup(html){
+  $("shadowReveal").innerHTML=html;
+  $("shadowReveal").style.display="block";
 }
+function closePopup(){ $("shadowReveal").style.display="none"; }
+function closeAbilityDialog(){ $("abilityUnlock").style.display="none"; }
 
 /* ---------- ABILITY UNLOCK ---------- */
 function checkAbilityUnlock(prev,curr){
@@ -56,7 +55,8 @@ function checkAbilityUnlock(prev,curr){
     if(!abilityStatus[i] && prev<ab.unlock && curr>=ab.unlock){
       abilityStatus[i]=true;
       localStorage.setItem("abilities",JSON.stringify(abilityStatus));
-      showAbilityDialog(ab.name);
+      $("abilityUnlock").innerHTML=`<strong>${ab.name}</strong> unlocked!<br><button onclick="closeAbilityDialog()">OK</button>`;
+      $("abilityUnlock").style.display="block";
     }
   });
 }
@@ -89,12 +89,11 @@ function resist(){
   if(isNamedLevel(next)){
     performNamedUpgrade(next,true);
   }else{
-    $("notification").innerHTML=`${next*2} shadow soldiers await<br><button onclick="collectSoldiers()">Arise</button>`;
-    $("notification").style.display="block";
+    showPopup(`${next*2} shadow soldiers await<br><button onclick="collectSoldiers()">Arise</button>`);
   }
 }
 function collectSoldiers(){
-  $("notification").style.display="none";
+  closePopup();
   const prev=level;
   level++; localStorage.setItem("level",level); checkAbilityUnlock(prev,level);
 
@@ -102,8 +101,7 @@ function collectSoldiers(){
   totalGen+=gain; localStorage.setItem("totalGen",totalGen);
 
   banner(`+${gain} soldiers`);
-  $("shadowReveal").innerHTML=`Gained ${gain} soldiers<br><button onclick="closeReveal()">OK</button>`;
-  $("shadowReveal").style.display="block";
+  showPopup(`Gained ${gain} soldiers<br><button onclick="closePopup()">OK</button>`);
   updateUI();
 }
 function performNamedUpgrade(targetLevel,auto){
@@ -114,14 +112,13 @@ function performNamedUpgrade(targetLevel,auto){
   if(named[idx].level===0){
     named[idx].level=1;
     banner(`Summoned: ${nm}`);
-    $("shadowReveal").innerHTML=`Summoned <strong>${nm}</strong> (Lv.1)<br><button onclick="closeReveal()">OK</button>`;
+    showPopup(`Summoned <strong>${nm}</strong> (Lv.1)<br><button onclick="closePopup()">OK</button>`);
   }else{
     named[idx].level++;
     banner(`Upgraded: ${nm}`);
-    $("shadowReveal").innerHTML=`${nm} upgraded to <strong>Lv.${named[idx].level}</strong><br><button onclick="closeReveal()">OK</button>`;
+    showPopup(`${nm} upgraded to <strong>Lv.${named[idx].level}</strong><br><button onclick="closePopup()">OK</button>`);
   }
   localStorage.setItem("named",JSON.stringify(named));
-  $("shadowReveal").style.display="block";
   updateUI();
 }
 function defeat(){
@@ -131,8 +128,7 @@ function defeat(){
   localStorage.setItem("totalGen",totalGen);
   localStorage.setItem("hist",JSON.stringify(history));
 
-  $("shadowReveal").innerHTML=`You gave in.<br>Lost <strong>${lost}</strong> soldiers.<br><button onclick="closeReveal()">OK</button>`;
-  $("shadowReveal").style.display="block";
+  showPopup(`You gave in.<br>Lost <strong>${lost}</strong> soldiers.<br><button onclick="closePopup()">OK</button>`);
   updateUI();
 }
 function forgeZenos(){
@@ -144,8 +140,7 @@ function forgeZenos(){
     banner(`Zenos Lv.${zenosLevel}`);
     updateUI();
   }else{
-    $("shadowReveal").innerHTML=`Need ${cost} soldiers to upgrade Zenos.<br><button onclick="closeReveal()">OK</button>`;
-    $("shadowReveal").style.display="block";
+    showPopup(`Need ${cost} soldiers to upgrade Zenos.<br><button onclick="closePopup()">OK</button>`);
   }
 }
 function resetGame(){
@@ -155,6 +150,7 @@ function resetGame(){
   localStorage.clear();
   localStorage.setItem("abilities",JSON.stringify(abilityStatus));
   document.querySelectorAll(".overlay").forEach(o=>o.style.display="none");
+  closePopup(); closeAbilityDialog();
   updateUI();
 }
 
@@ -162,10 +158,7 @@ function resetGame(){
 function toggleRoadmap(){
   const ov=$("roadmapOverlay");
   ov.style.display=ov.style.display==="block"?"none":"block";
-  if(ov.style.display==="block"){
-    $("roadmapDialog").style.display="none";
-    buildRoadmap();
-  }
+  if(ov.style.display==="block") buildRoadmap();
 }
 function buildRoadmap(){
   const msg=$("roadmapMsg"), grid=$("roadmapGrid");
@@ -186,17 +179,20 @@ function buildRoadmap(){
   }
 }
 function roadmapClick(lv){
-  const dlg=$("roadmapDialog"), txt=$("roadmapDialogMsg");
+  let html;
   if(isNamedLevel(lv)){
     const idx=idxFor(lv), nm=NAMES[idx], cur=named[idx].level;
-    txt.textContent=lv<=level?`${nm} is Level ${cur||1}`:`${nm} gets upgraded to Level ${cur+1}`;
+    html = lv<=level
+      ? `${nm} is Level ${cur||1}`
+      : `${nm} gets upgraded to Level ${cur+1}`;
   }else{
     const val=lv*2;
-    txt.textContent=lv<=level?`Gained ${val} soldiers at Level ${lv}`:`Will gain ${val} soldiers`;
+    html = lv<=level
+      ? `Gained ${val} soldiers at Level ${lv}`
+      : `Will gain ${val} soldiers`;
   }
-  dlg.style.display="block";
+  showPopup(`${html}<br><button onclick="closePopup()">OK</button>`);
 }
-function closeRoadmapDialog(){ $("roadmapDialog").style.display="none"; }
 
 /* ---------- SHADOW ARMY ---------- */
 function toggleNamed(){
@@ -263,18 +259,18 @@ function buildArmy(){
       if(lbl==="You") it.classList.add("me");
       const key=lbl.split(" ")[0];
       const unlocked=(key==="You")||
-        (key==="Envy" && named[8].level>0)||
-        (key==="Crave"&&named[1].level>0)||
-        (key==="Desire"&&named[2].level>0)||
-        (key==="Siren"&&named[3].level>0)||
-        (key==="Ecstasy"&&named[4].level>0)||
-        (key==="Obsession"&&named[5].level>0)||
-        (key==="Flesh"&&named[6].level>0)||
-        (key==="Sin"&&named[7].level>0)||
-        (key==="Temptress"&&named[0].level>0)||
-        (key==="Madness"&&named[9].level>0)||
-        (key==="Zenos"&&zenosLevel>0)||
-        (key==="Shadow"&&totalGen>0);
+        (key==="Envy"      && named[8].level>0)||
+        (key==="Crave"     && named[1].level>0)||
+        (key==="Desire"    && named[2].level>0)||
+        (key==="Siren"     && named[3].level>0)||
+        (key==="Ecstasy"   && named[4].level>0)||
+        (key==="Obsession" && named[5].level>0)||
+        (key==="Flesh"     && named[6].level>0)||
+        (key==="Sin"       && named[7].level>0)||
+        (key==="Temptress" && named[0].level>0)||
+        (key==="Madness"   && named[9].level>0)||
+        (key==="Zenos"     && zenosLevel>0)    ||
+        (key==="Shadow"    && totalGen>0);
       if(unlocked) it.classList.add("unlocked");
       it.textContent=lbl; rowDiv.appendChild(it);
     });
@@ -285,7 +281,7 @@ function buildArmy(){
 /* ---------- INIT ---------- */
 updateUI();
 
-/* fast-upgrade for post-100 grid */
+/* fast-upgrade for post-100 named squares */
 document.addEventListener("click",e=>{
   if(e.target.classList.contains("grid-box")){
     const val=+e.target.textContent;
