@@ -167,11 +167,11 @@ function forgeZeno(){
     zenoLevel++;
     localStorage.setItem("totalGen", totalGen);
     localStorage.setItem("zenoLevel", zenoLevel);
-    banner(`Zeno Lv.${zenoLevel}`);
+    banner(`Zenos Lv.${zenoLevel}`);
     updateUI();
   } else {
     $("shadowReveal").innerHTML =
-      `Need ${cost} soldiers to upgrade Zeno.<br><button onclick="closeReveal()">OK</button>`;
+      `Need ${cost} soldiers to upgrade Zenos.<br><button onclick="closeReveal()">OK</button>`;
     $("shadowReveal").style.display="block";
   }
 }
@@ -245,7 +245,7 @@ function buildNamed(){
   if (zenoLevel > 0){
     const z = document.createElement("div");
     z.className="named-item z-top";
-    z.innerHTML=`<span>Zenos (Giant)</span><span>Lv.${zenoLevel}</span>`;
+    z.innerHTML=`<span>Zenos(Giant)</span><span>Lv.${zenoLevel}</span>`;
     wrap.appendChild(z);
   }
   for (let i = NAMED_COUNT-1; i >= 0; i--){
