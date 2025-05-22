@@ -1,10 +1,7 @@
 /* =======================================================
-   SOLO SLAYER – COMPLETE SCRIPT (2025-05-21)
-   • Zeno always first in Shadow Army list
-   • Named shadows listed in descending strength
-     (Madness→…→Temptress)
-   • Roadmap hides after Lv 101, correct upgrade text
-   • Upgrade flow is single-click beyond Lv 100
+   SOLO SLAYER – COMPLETE SCRIPT (2025-05-22)
+   • Added Abilities overlay + button
+   • Abilities unlock at Lv 30, 60, 100
    ======================================================= */
 
 /* ---------- CONSTANTS ---------- */
@@ -13,6 +10,12 @@ const NAMES = [
   "Obsession","Flesh","Sin","Envy","Madness"
 ];
 const NAMED_COUNT = 10;
+
+const ABILITIES = [
+  { name: "Exchange",           unlock: 30 },
+  { name: "SelfClone",          unlock: 60 },
+  { name: "namedSoldersClone",  unlock:100 }
+];
 
 /* ---------- PERSISTED STATE ---------- */
 let level     = +localStorage.getItem("level")     || 0;
@@ -51,8 +54,9 @@ function updateUI() {
   $("auraFill").style.width     = `${aura}%`;
   $("toxicityFill").style.width = `${100-aura}%`;
 
-  if ($("roadmapOverlay").style.display==="block") buildRoadmap();
-  if ($("namedOverlay").style.display==="block")   buildNamed();
+  if ($("roadmapOverlay").style.display==="block")   buildRoadmap();
+  if ($("namedOverlay").style.display==="block")     buildNamed();
+  if ($("abilitiesOverlay").style.display==="block") buildAbilities();
 }
 function banner(msg){
   const d=document.createElement("div");
@@ -157,57 +161,47 @@ function resetGame(){
 function toggleRoadmap(){
   const ov = $("roadmapOverlay");
   ov.style.display = ov.style.display==="block" ? "none" : "block";
-  if (ov.style.display==="block") buildRoadmap();
+  if (ov.style.display==="block"){
+    $("roadmapDialog").style.display="none";
+    buildRoadmap();
+  }
 }
 function buildRoadmap(){
-  const msg  = $("roadmapMsg"),
-        grid = $("roadmapGrid");
-
-  if (level >= 100) {                // hide grid, show message
-    msg.textContent = "You are beyond Level 100 — forge your own path!";
+  const msg=$("roadmapMsg"), grid=$("roadmapGrid");
+  if(level>=101){
+    msg.textContent="You are beyond Level 100 — forge your own path!";
     grid.style.display="none";
     return;
   }
-  msg.textContent = "";
-  grid.style.display="grid";
-  grid.innerHTML  = "";
-
-  const base = level === 0 ? 1 : Math.floor(level/100)*100 + 1;
-  for (let i = base; i < base + 100; i++){
-    const div = document.createElement("div");
-    div.className = "grid-box";
-    div.textContent = i;
-    if (i <= level) div.classList.add("highlight");
-    if (isNamedLevel(i)) div.classList.add("named");
-    div.onclick = e => roadmapClick(i, e);
-    grid.appendChild(div);
+  msg.textContent="";grid.style.display="grid";grid.innerHTML="";
+  const base=level===0?1:Math.floor(level/100)*100+1;
+  for(let i=base;i<base+100;i++){
+    const box=document.createElement("div");
+    box.className="grid-box";
+    box.textContent=i;
+    if(i<=level) box.classList.add("highlight");
+    if(isNamedLevel(i)) box.classList.add("named");
+    box.onclick=()=>roadmapClick(i);
+    grid.appendChild(box);
   }
 }
-function roadmapClick(lv, e){
-  const pop = $("gridPopup");
-  let txt;
-
-  if (isNamedLevel(lv)){
-    const idx = idxFor(lv),
-          nm  = NAMES[idx],
-          cur = named[idx].level;
-    txt = lv <= level
-        ? `${nm} is Level ${cur || 1}`
-        : `${nm} gets upgraded to Level ${cur + 1}`;
-  } else {
-    const val = lv * 2;
-    txt = lv <= level
-        ? `Gained ${val} soldiers at Lv.${lv}`
-        : `Will gain ${val} soldiers`;
+function roadmapClick(lv){
+  const dlg=$("roadmapDialog"),
+        txt=$("roadmapDialogMsg");
+  if(isNamedLevel(lv)){
+    const idx=idxFor(lv), nm=NAMES[idx], cur=named[idx].level;
+    txt.textContent = lv<=level
+      ? `${nm} is Level ${cur||1}`
+      : `${nm} gets upgraded to Level ${cur+1}`;
+  }else{
+    const val=lv*2;
+    txt.textContent = lv<=level
+      ? `Gained ${val} soldiers at Level ${lv}`
+      : `Will gain ${val} soldiers`;
   }
-  pop.textContent = txt;
-  const r = e.target.getBoundingClientRect();
-  pop.style.top  = (r.bottom + window.scrollY + 8) + "px";
-  pop.style.left = (r.left   + window.scrollX + r.width/2) + "px";
-  pop.style.transform = "translateX(-50%)";
-  pop.style.display   = "block";
-  clearTimeout(pop.timer); pop.timer = setTimeout(()=>pop.style.display="none",2500);
+  dlg.style.display="block";
 }
+function closeRoadmapDialog(){ $("roadmapDialog").style.display="none"; }
 
 /* ---------- SHADOW ARMY LIST ---------- */
 function toggleNamed(){
@@ -238,6 +232,25 @@ function buildNamed(){
     div.className="named-item";
     div.innerHTML=`<span>${obj.name}</span><span>Lv.${obj.lvl}</span>`;
     wrap.appendChild(div);
+  });
+}
+
+/* ---------- ABILITIES (NEW) ---------- */
+function toggleAbilities(){
+  const ov = $("abilitiesOverlay");
+  ov.style.display = ov.style.display==="block" ? "none" : "block";
+  if (ov.style.display==="block") buildAbilities();
+}
+function buildAbilities(){
+  const list=$("abilitiesList"); list.innerHTML="";
+  ABILITIES.forEach(ab=>{
+    const div=document.createElement("div");
+    div.className="ability-item";
+    const unlocked = level >= ab.unlock;
+    if (unlocked) div.classList.add("unlocked");
+    div.innerHTML = `<span>${ab.name} (Unlocks at Level ${ab.unlock})</span>
+                     <span>${unlocked?"Unlocked":"Locked"}</span>`;
+    list.appendChild(div);
   });
 }
 
