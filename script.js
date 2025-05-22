@@ -1,5 +1,5 @@
 /* =======================================================
-   SOLO SLAYER  –  SCRIPT (Roadmap simplified)
+   SOLO SLAYER  –  SCRIPT (General Shadows upgrades added)
    ======================================================= */
 
 /* ---------- CONSTANTS ---------- */
@@ -30,6 +30,7 @@ while (abilityStatus.length < ABILITIES.length) abilityStatus.push(false);
 /* ---------- HELPERS ---------- */
 const $ = id => document.getElementById(id);
 const rank = lv => lv>=75?"S":lv>=50?"A":lv>=35?"B":lv>=20?"C":lv>=10?"D":"E";
+const gsLevel = lv => lv<100 ? 0 : 1 + Math.floor((lv-100)/25);
 
 /* ---------- POP-UPS ---------- */
 function showPopup(html){
@@ -45,14 +46,12 @@ function banner(msg){
   setTimeout(()=>d.remove(),3000);
 }
 
-/* ---------- ABILITY POP-UP ---------- */
+/* ---------- ABILITY UNLOCK ---------- */
 function notifyAbility(idx){
   $("abilityUnlock").innerHTML=
     `<strong>${ABILITIES[idx].name}</strong> unlocked!<br><button onclick="$('abilityUnlock').style.display='none'">OK</button>`;
   $("abilityUnlock").style.display="block";
 }
-
-/* ---------- ABILITY CHECK ---------- */
 function checkAbility(prev,curr){
   ABILITIES.forEach((ab,i)=>{
     if(!abilityStatus[i] && prev<ab.unlock && curr>=ab.unlock){
@@ -61,6 +60,16 @@ function checkAbility(prev,curr){
       notifyAbility(i);
     }
   });
+}
+
+/* ---------- GENERAL SHADOWS UPGRADE ---------- */
+function checkGSUpgrade(prev,curr){
+  const prevGS = gsLevel(prev);
+  const currGS = gsLevel(curr);
+  if(currGS > prevGS){
+    banner(`General Shadows Lv.${currGS}`);
+    showPopup(`General Shadows upgraded to <strong>Lv.${currGS}</strong><br><button onclick="closePopup()">OK</button>`);
+  }
 }
 
 /* ---------- UI REFRESH ---------- */
@@ -88,7 +97,7 @@ function resist(){
   history.push("resist"); localStorage.setItem("hist",JSON.stringify(history));
   const next=level+1;
 
-  if(next%10===0 && next<=100){          // named level (≤100)
+  if(next%10===0 && next<=100){          // named (≤100)
     performNamedUpgrade(next,true);
   }else if(next>100 && (next-100)%5===0){
     performNamedUpgrade(next,true);
@@ -99,7 +108,8 @@ function resist(){
 function collectSoldiers(){
   closePopup();
   const prev=level;
-  level++; localStorage.setItem("level",level); checkAbility(prev,level);
+  level++; localStorage.setItem("level",level);
+  checkAbility(prev,level); checkGSUpgrade(prev,level);
 
   const gain=level*2;
   totalGen+=gain; localStorage.setItem("totalGen",totalGen);
@@ -112,7 +122,8 @@ function performNamedUpgrade(targetLevel,auto){
   const idx = targetLevel<=100 ? targetLevel/10-1 : ( (targetLevel-105)/5 )%10;
   const nm  = NAMES[idx];
   const prev=level;
-  level++; if(auto) localStorage.setItem("level",level); checkAbility(prev,level);
+  level++; if(auto) localStorage.setItem("level",level);
+  checkAbility(prev,level); checkGSUpgrade(prev,level);
 
   if(named[idx].level===0){
     named[idx].level=1;
@@ -203,6 +214,13 @@ function buildNamed(){
       wrap.appendChild(div);
     }
   }
+  /* --- General Shadows row --- */
+  const gs=gsLevel(level);
+  const gDiv=document.createElement("div");
+  gDiv.className="named-item general";
+  if(gs>0) gDiv.classList.add("unlocked");
+  gDiv.innerHTML=`<span>General Shadows</span><span>Lv.${gs}</span>`;
+  wrap.appendChild(gDiv);
 }
 
 /* ---------- ABILITIES LIST ---------- */
