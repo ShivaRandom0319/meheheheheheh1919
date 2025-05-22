@@ -1,7 +1,7 @@
 /* =======================================================
-   SOLO SLAYER – COMPLETE SCRIPT (2025-05-22)
-   • Added Abilities overlay + button
-   • Abilities unlock at Lv 30, 60, 100
+   SOLO SLAYER – COMPLETE SCRIPT  (2025-05-22)
+   • Ability-unlock pop-up + status persistence
+   • “My Army” overlay with colour-coded hierarchy
    ======================================================= */
 
 /* ---------- CONSTANTS ---------- */
@@ -12,9 +12,9 @@ const NAMES = [
 const NAMED_COUNT = 10;
 
 const ABILITIES = [
-  { name: "Exchange",           unlock: 30 },
-  { name: "SelfClone",          unlock: 60 },
-  { name: "namedSoldersClone",  unlock:100 }
+  { name: "Exchange",          unlock: 30 },
+  { name: "SelfClone",         unlock: 60 },
+  { name: "namedSoldersClone", unlock:100 }
 ];
 
 /* ---------- PERSISTED STATE ---------- */
@@ -24,9 +24,11 @@ let failures  = +localStorage.getItem("failures")  || 0;
 let zenoLevel = +localStorage.getItem("zenoLevel") || 0;
 let history   = JSON.parse(localStorage.getItem("hist") || "[]");      // resist | defeat
 
-/* fixed-length named array → [{level:0}, …] */
 let named = JSON.parse(localStorage.getItem("named") || "[]");
 while (named.length < NAMED_COUNT) named.push({ level : 0 });
+
+let abilityStatus = JSON.parse(localStorage.getItem("abilities") || "[]");
+while (abilityStatus.length < ABILITIES.length) abilityStatus.push(false);
 
 /* ---------- SHORTCUTS ---------- */
 const $ = id => document.getElementById(id);
@@ -57,7 +59,10 @@ function updateUI() {
   if ($("roadmapOverlay").style.display==="block")   buildRoadmap();
   if ($("namedOverlay").style.display==="block")     buildNamed();
   if ($("abilitiesOverlay").style.display==="block") buildAbilities();
+  if ($("armyOverlay").style.display==="block")      buildArmy();
 }
+
+/* ---------- POP-UPS ---------- */
 function banner(msg){
   const d=document.createElement("div");
   d.className="shadow-arrival";
@@ -66,10 +71,29 @@ function banner(msg){
   setTimeout(()=>d.remove(),3000);
 }
 function closeReveal(){ $("shadowReveal").style.display="none"; }
+function closeAbilityDialog(){ $("abilityUnlock").style.display="none"; }
+function showAbilityDialog(abilityName){
+  $("abilityUnlock").innerHTML =
+    `<strong>${abilityName}</strong> unlocked!<br>
+     <button onclick="closeAbilityDialog()">OK</button>`;
+  $("abilityUnlock").style.display="block";
+}
+
+/* ---------- ABILITY UNLOCK CHECK ---------- */
+function checkAbilityUnlock(prev, curr){
+  ABILITIES.forEach((ab,i)=>{
+    if(!abilityStatus[i] && prev < ab.unlock && curr >= ab.unlock){
+      abilityStatus[i] = true;
+      localStorage.setItem("abilities", JSON.stringify(abilityStatus));
+      showAbilityDialog(ab.name);
+    }
+  });
+}
 
 /* ---------- CORE GAMEPLAY ---------- */
 function resist(){
-  history.push("resist"); localStorage.setItem("hist",JSON.stringify(history));
+  history.push("resist");
+  localStorage.setItem("hist",JSON.stringify(history));
   const next = level + 1;
 
   if (isNamedLevel(next)) {
@@ -82,7 +106,9 @@ function resist(){
 }
 function collectSoldiers(){
   $("notification").style.display="none";
+  const prev = level;
   level++;  localStorage.setItem("level", level);
+  checkAbilityUnlock(prev, level);
 
   const gain = level * 2;
   totalGen  += gain;
@@ -99,14 +125,16 @@ function performNamedUpgrade(targetLevel, auto){
   const idx = idxFor(targetLevel),
         nm  = NAMES[idx];
 
+  const prev = level;
   level++; if (auto) localStorage.setItem("level", level);
+  checkAbilityUnlock(prev, level);
 
-  if (named[idx].level === 0) {        // first summon
+  if (named[idx].level === 0) {
     named[idx].level = 1;
     banner(`Summoned: ${nm}`);
     $("shadowReveal").innerHTML =
       `Summoned <strong>${nm}</strong> (Lv.1)<br><button onclick="closeReveal()">OK</button>`;
-  } else {                             // upgrade
+  } else {
     named[idx].level++;
     banner(`Upgraded: ${nm}`);
     $("shadowReveal").innerHTML =
@@ -139,11 +167,11 @@ function forgeZeno(){
     zenoLevel++;
     localStorage.setItem("totalGen", totalGen);
     localStorage.setItem("zenoLevel", zenoLevel);
-    banner(`Zenos Lv.${zenoLevel}`);
+    banner(`Zeno Lv.${zenoLevel}`);
     updateUI();
   } else {
     $("shadowReveal").innerHTML =
-      `Need ${cost} soldiers to upgrade Zenos.<br><button onclick="closeReveal()">OK</button>`;
+      `Need ${cost} soldiers to upgrade Zeno.<br><button onclick="closeReveal()">OK</button>`;
     $("shadowReveal").style.display="block";
   }
 }
@@ -152,7 +180,9 @@ function resetGame(){
   level = failures = zenoLevel = 0;
   totalGen = 0; history = [];
   named = Array.from({length:NAMED_COUNT}, () => ({level:0}));
+  abilityStatus = ABILITIES.map(()=>false);
   localStorage.clear();
+  localStorage.setItem("abilities", JSON.stringify(abilityStatus));
   document.querySelectorAll(".overlay").forEach(o=>o.style.display="none");
   updateUI();
 }
@@ -212,30 +242,23 @@ function toggleNamed(){
 function buildNamed(){
   const wrap=$("namedContainer"); wrap.innerHTML="";
 
-  /* Zeno (if any) first */
   if (zenoLevel > 0){
     const z = document.createElement("div");
     z.className="named-item z-top";
-    z.innerHTML=`<span>Zenos (Giant)</span><span>Lv.${zenoLevel}</span>`;
+    z.innerHTML=`<span>Zenos</span><span>Lv.${zenoLevel}</span>`;
     wrap.appendChild(z);
   }
-
-  /* unlocked named shadows sorted by index DESC (Madness→Temptress) */
-  const unlocked = [];
   for (let i = NAMED_COUNT-1; i >= 0; i--){
     if (named[i].level > 0){
-      unlocked.push({name:NAMES[i], lvl:named[i].level});
+      const div=document.createElement("div");
+      div.className="named-item";
+      div.innerHTML=`<span>${NAMES[i]}</span><span>Lv.${named[i].level}</span>`;
+      wrap.appendChild(div);
     }
   }
-  unlocked.forEach(obj=>{
-    const div=document.createElement("div");
-    div.className="named-item";
-    div.innerHTML=`<span>${obj.name}</span><span>Lv.${obj.lvl}</span>`;
-    wrap.appendChild(div);
-  });
 }
 
-/* ---------- ABILITIES (NEW) ---------- */
+/* ---------- ABILITIES ---------- */
 function toggleAbilities(){
   const ov = $("abilitiesOverlay");
   ov.style.display = ov.style.display==="block" ? "none" : "block";
@@ -243,21 +266,71 @@ function toggleAbilities(){
 }
 function buildAbilities(){
   const list=$("abilitiesList"); list.innerHTML="";
-  ABILITIES.forEach(ab=>{
+  ABILITIES.forEach((ab,i)=>{
     const div=document.createElement("div");
     div.className="ability-item";
     const unlocked = level >= ab.unlock;
-    if (unlocked) div.classList.add("unlocked");
+    if(unlocked) div.classList.add("unlocked");
     div.innerHTML = `<span>${ab.name} (Unlocks at Level ${ab.unlock})</span>
                      <span>${unlocked?"Unlocked":"Locked"}</span>`;
     list.appendChild(div);
   });
 }
 
+/* ---------- MY-ARMY VISUAL ---------- */
+function toggleArmy(){
+  const ov = $("armyOverlay");
+  ov.style.display = ov.style.display==="block" ? "none" : "block";
+  if (ov.style.display==="block") buildArmy();
+}
+function buildArmy(){
+  const container=$("armyContainer"); container.innerHTML="";
+
+  const rows = [
+    ["You"],
+    ["Envy (Magician)"],
+    ["Crave","Desire","Siren","Ecstasy","Obsession","Flesh","Sin"],
+    ["Temptress (Commander)"],
+    ["Shadow Soldiers"],
+    ["Zenos (Giant)","Madness (Dragon)"]
+  ];
+
+  rows.forEach(r=>{
+    const rowDiv=document.createElement("div");
+    rowDiv.className="army-row";
+    r.forEach(label=>{
+      const item=document.createElement("div");
+      item.className="army-item";
+      if(label==="You") item.classList.add("me");
+
+      const key=label.split(" ")[0];           // base name
+      const unlocked = (
+        key==="You" ? true :
+        key==="Envy"      ? named[8].level>0 :
+        key==="Crave"     ? named[1].level>0 :
+        key==="Desire"    ? named[2].level>0 :
+        key==="Siren"     ? named[3].level>0 :
+        key==="Ecstasy"   ? named[4].level>0 :
+        key==="Obsession" ? named[5].level>0 :
+        key==="Flesh"     ? named[6].level>0 :
+        key==="Sin"       ? named[7].level>0 :
+        key==="Temptress" ? named[0].level>0 :
+        key==="Madness"   ? named[9].level>0 :
+        key==="Zenos"     ? zenoLevel>0       :
+        key==="Shadow"    ? totalGen>0        : false
+      );
+      if(unlocked) item.classList.add("unlocked");
+      item.textContent = label;
+      rowDiv.appendChild(item);
+    });
+    container.appendChild(rowDiv);
+  });
+}
+
 /* ---------- INITIALISATION ---------- */
 updateUI();
 
-/* intercept click on the *very next* named square (Lv>100) so upgrade happens instantly */
+/* Named-square fast-upgrade (Lv>100) */
 document.addEventListener("click",e=>{
   if (e.target.classList.contains("grid-box")){
     const val = +e.target.textContent;
