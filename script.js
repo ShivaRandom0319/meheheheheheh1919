@@ -152,7 +152,7 @@ function resetGame(){
 /* ---------- ROADMAP (list) ---------- */
 function toggleRoadmap(){ const o=$("roadmapOverlay"); o.style.display=o.style.display==="block"?"none":"block"; if(o.style.display==="block") buildRoadmap(); }
 function buildRoadmap(){
-  $("roadmapMsg").textContent=level>=100?"You are good to go and named solders will get upgraded every fifth level":"";
+  $("roadmapMsg").textContent=level>=100?"You are good to go and named solders will get upgraded every fifth level from Level 100":"";
   const list=$("roadmapList"); list.innerHTML="";
   NAMES.forEach((nm,i)=>{
     const unlock=(i+1)*10; const d=document.createElement("div");
