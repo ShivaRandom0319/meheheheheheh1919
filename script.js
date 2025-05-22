@@ -1,5 +1,5 @@
 /* =======================================================
-   SOLO SLAYER – General Shadows Level & pop-ups
+   SOLO SLAYER – General Shadows pop-up fix
    ======================================================= */
 
 /* ---------- CONSTANTS ---------- */
@@ -7,66 +7,57 @@ const NAMES = [
   "Temptress","Crave","Desire","Siren","Ecstasy",
   "Obsession","Flesh","Sin","Envy","Madness"
 ];
-const NAMED_COUNT = 10;
-
 const ABILITIES = [
   { name: "Exchange",          unlock: 30 },
   { name: "SelfClone",         unlock: 60 },
   { name: "namedSoldersClone", unlock:100 }
 ];
+const NAMED_COUNT = 10;
 
-/* ---------- PERSISTED STATE ---------- */
-let level        = +localStorage.getItem("level")      || 0;
-let totalGen     = +localStorage.getItem("totalGen")   || 0;
-let failures     = +localStorage.getItem("failures")   || 0;
-let zenosLevel   = +localStorage.getItem("zenosLevel") || 0;
-let history      = JSON.parse(localStorage.getItem("hist")   || "[]");
-let named        = JSON.parse(localStorage.getItem("named")  || "[]");
+/* ---------- STATE ---------- */
+let level      = +localStorage.getItem("level")      || 0;
+let totalGen   = +localStorage.getItem("totalGen")   || 0;
+let failures   = +localStorage.getItem("failures")   || 0;
+let zenosLevel = +localStorage.getItem("zenosLevel") || 0;
+let history    = JSON.parse(localStorage.getItem("hist")  || "[]");
+let named      = JSON.parse(localStorage.getItem("named") || "[]");
 while (named.length < NAMED_COUNT) named.push({ level:0 });
-
-let abilityStatus = JSON.parse(localStorage.getItem("abilities") || "[]");
-while (abilityStatus.length < ABILITIES.length) abilityStatus.push(false);
+let abilityOk  = JSON.parse(localStorage.getItem("abilities") || "[]");
+while (abilityOk.length < ABILITIES.length) abilityOk.push(false);
 
 /* ---------- HELPERS ---------- */
-const $ = id => document.getElementById(id);
+const $    = id => document.getElementById(id);
 const rank = lv => lv>=75?"S":lv>=50?"A":lv>=35?"B":lv>=20?"C":lv>=10?"D":"E";
-const generalLevel = lv => lv<125 ? 1 : 1+Math.floor((lv-100)/25);
+const gLvl = lv => lv<125 ? 1 : 1+Math.floor((lv-100)/25);
 
-/* ---------- POP-UPS ---------- */
-function showPopup(html){ $("shadowReveal").innerHTML=html; $("shadowReveal").style.display="block"; }
-function closePopup(){ $("shadowReveal").style.display="none"; }
+/* ---------- UI POP-UPS ---------- */
+function pop(html){ $("shadowReveal").innerHTML=html; $("shadowReveal").style.display="block"; }
+function closePop(){ $("shadowReveal").style.display="none"; }
 function banner(msg){
   const d=document.createElement("div");
-  d.className="shadow-arrival"; d.textContent=msg; document.body.appendChild(d);
-  setTimeout(()=>d.remove(),3000);
-}
-function notifyAbility(idx){
-  $("abilityUnlock").innerHTML=
-    `<strong>${ABILITIES[idx].name}</strong> unlocked!<br><button onclick="$('abilityUnlock').style.display='none'">OK</button>`;
-  $("abilityUnlock").style.display="block";
+  d.className="shadow-arrival"; d.textContent=msg;
+  document.body.appendChild(d); setTimeout(()=>d.remove(),3000);
 }
 
-/* ---------- ABILITY CHECK ---------- */
+/* ---------- ABILITIES ---------- */
 function checkAbility(prev,curr){
   ABILITIES.forEach((ab,i)=>{
-    if(!abilityStatus[i] && prev<ab.unlock && curr>=ab.unlock){
-      abilityStatus[i]=true;
-      localStorage.setItem("abilities",JSON.stringify(abilityStatus));
-      notifyAbility(i);
+    if(!abilityOk[i] && prev<ab.unlock && curr>=ab.unlock){
+      abilityOk[i]=true; localStorage.setItem("abilities",JSON.stringify(abilityOk));
+      $("abilityUnlock").innerHTML=
+        `<strong>${ab.name}</strong> unlocked!<br><button onclick="$('abilityUnlock').style.display='none'">OK</button>`;
+      $("abilityUnlock").style.display="block";
     }
   });
 }
 
-/* ---------- GENERAL SHADOWS UPGRADE CHECK ---------- */
-function checkGeneralUpgrade(prev,curr){
-  const before = generalLevel(prev);
-  const after  = generalLevel(curr);
-  if(after>before){
-    showPopup(`General Shadows upgraded to <strong>Level ${after}</strong><br><button onclick="closePopup()">OK</button>`);
-  }
+/* ---------- GENERAL SHADOWS ---------- */
+function generalUpgradeMsg(prev,curr){
+  const before=gLvl(prev), after=gLvl(curr);
+  return after>before ? `General Shadows upgraded to <strong>Level ${after}</strong>` : null;
 }
 
-/* ---------- UI REFRESH ---------- */
+/* ---------- CORE UPDATE ---------- */
 function updateUI(){
   $("level").textContent=level;
   $("rank").textContent=rank(level);
@@ -75,10 +66,8 @@ function updateUI(){
 
   const res=history.filter(x=>x==="resist").length;
   const aura=history.length?Math.round((res/history.length)*100):100;
-  $("aura").textContent=aura;
-  $("toxicity").textContent=100-aura;
-  $("auraFill").style.width=`${aura}%`;
-  $("toxicityFill").style.width=`${100-aura}%`;
+  $("aura").textContent=aura; $("toxicity").textContent=100-aura;
+  $("auraFill").style.width=`${aura}%`; $("toxicityFill").style.width=`${100-aura}%`;
 
   if($("roadmapOverlay").style.display==="block")   buildRoadmap();
   if($("namedOverlay").style.display==="block")     buildNamed();
@@ -86,152 +75,122 @@ function updateUI(){
   if($("armyOverlay").style.display==="block")      buildArmy();
 }
 
-/* ---------- CORE GAMEPLAY ---------- */
+/* ---------- RESIST / COLLECT ---------- */
 function resist(){
   history.push("resist"); localStorage.setItem("hist",JSON.stringify(history));
   const next=level+1;
+  const isNamed = (next<=100 && next%10===0) || (next>100 && (next-100)%5===0);
 
-  if(next%10===0 && next<=100 || next>100 && (next-100)%5===0){
-    performNamedUpgrade(next,true);
-  }else{
-    showPopup(`${next*2} shadow soldiers await<br><button onclick="collectSoldiers()">Arise</button>`);
-  }
+  if(isNamed){ performNamed(next); }
+  else{ pop(`${next*2} shadow soldiers await<br><button onclick="collect()">Arise</button>`); }
 }
-function collectSoldiers(){
-  closePopup();
-  const prev=level;
-  level++; localStorage.setItem("level",level);
-  checkAbility(prev,level); checkGeneralUpgrade(prev,level);
 
-  const gain=level*2;
-  totalGen+=gain; localStorage.setItem("totalGen",totalGen);
+function collect(){
+  closePop();
+  const prev=level; level++; localStorage.setItem("level",level);
+  checkAbility(prev,level);
 
-  banner(`+${gain} soldiers`);
-  showPopup(`Gained ${gain} soldiers<br><button onclick="closePopup()">OK</button>`);
+  const gMsg=generalUpgradeMsg(prev,level);
+  if(gMsg){ pop(`${gMsg}<br><button onclick="closePop()">OK</button>`); }
+  else{
+    const gain=level*2; totalGen+=gain; localStorage.setItem("totalGen",totalGen);
+    banner(`+${gain} soldiers`);
+    pop(`Gained ${gain} soldiers<br><button onclick="closePop()">OK</button>`);
+  }
   updateUI();
 }
-function performNamedUpgrade(targetLevel,auto){
-  const idx = targetLevel<=100 ? targetLevel/10-1 : ( (targetLevel-105)/5 )%10;
+
+/* ---------- NAMED UPGRADE ---------- */
+function performNamed(target){
+  const idx = target<=100 ? target/10-1 : ((target-105)/5)%10;
   const nm  = NAMES[idx];
-  const prev=level;
-  level++; if(auto) localStorage.setItem("level",level);
-  checkAbility(prev,level); checkGeneralUpgrade(prev,level);
+  const prev=level; level++; localStorage.setItem("level",level);
 
-  if(named[idx].level===0){
-    named[idx].level=1;
-    banner(`Summoned: ${nm}`);
-    showPopup(`Summoned <strong>${nm}</strong> (Lv.1)<br><button onclick="closePopup()">OK</button>`);
-  }else{
-    named[idx].level++;
-    banner(`Upgraded: ${nm}`);
-    showPopup(`${nm} upgraded to <strong>Lv.${named[idx].level}</strong><br><button onclick="closePopup()">OK</button>`);
-  }
+  checkAbility(prev,level);
+  const gMsg=generalUpgradeMsg(prev,level);
+
+  let text;
+  if(named[idx].level===0){ named[idx].level=1; banner(`Summoned: ${nm}`);
+    text=`Summoned <strong>${nm}</strong> (Lv.1)`; }
+  else{ named[idx].level++; banner(`Upgraded: ${nm}`);
+    text=`${nm} upgraded to <strong>Lv.${named[idx].level}</strong>`; }
+
   localStorage.setItem("named",JSON.stringify(named));
+  pop(`${gMsg?gMsg+"<br><br>":""}${text}<br><button onclick="closePop()">OK</button>`);
   updateUI();
 }
+
+/* ---------- DEFEAT ---------- */
 function defeat(){
   failures++; history.push("defeat");
   const lost=Math.floor(totalGen/2); totalGen-=lost;
-  localStorage.setItem("failures",failures);
-  localStorage.setItem("totalGen",totalGen);
-  localStorage.setItem("hist",JSON.stringify(history));
-  showPopup(`You gave in.<br>Lost <strong>${lost}</strong> soldiers.<br><button onclick="closePopup()">OK</button>`);
+  ["failures","totalGen","hist"].forEach((k,i)=>localStorage.setItem(k,[failures,totalGen,JSON.stringify(history)][i]));
+  pop(`You gave in.<br>Lost <strong>${lost}</strong> soldiers.<br><button onclick="closePop()">OK</button>`);
   updateUI();
 }
+
+/* ---------- ZENOS ---------- */
 function forgeZenos(){
   const cost=1000*Math.pow(2,zenosLevel);
   if(totalGen>=cost){
     totalGen-=cost; zenosLevel++;
-    localStorage.setItem("totalGen",totalGen);
-    localStorage.setItem("zenosLevel",zenosLevel);
+    localStorage.setItem("totalGen",totalGen); localStorage.setItem("zenosLevel",zenosLevel);
     banner(`Zenos Lv.${zenosLevel}`); updateUI();
-  }else{
-    showPopup(`Need ${cost} soldiers to upgrade Zenos.<br><button onclick="closePopup()">OK</button>`);
-  }
+  }else{ pop(`Need ${cost} soldiers to upgrade Zenos.<br><button onclick="closePop()">OK</button>`); }
 }
+
+/* ---------- RESET ---------- */
 function resetGame(){
   level=failures=zenosLevel=0; totalGen=0; history=[];
-  named=Array.from({length:NAMED_COUNT},()=>({level:0}));
-  abilityStatus=ABILITIES.map(()=>false);
-  localStorage.clear();
-  localStorage.setItem("abilities",JSON.stringify(abilityStatus));
+  named=NAMES.map(()=>({level:0})); abilityOk=ABILITIES.map(()=>false);
+  localStorage.clear(); localStorage.setItem("abilities",JSON.stringify(abilityOk));
   document.querySelectorAll(".overlay").forEach(o=>o.style.display="none");
-  closePopup(); $("abilityUnlock").style.display="none";
+  closePop(); $("abilityUnlock").style.display="none";
   updateUI();
 }
 
-/* ---------- ROADMAP ---------- */
-function toggleRoadmap(){
-  const ov=$("roadmapOverlay");
-  ov.style.display=ov.style.display==="block"?"none":"block";
-  if(ov.style.display==="block") buildRoadmap();
-}
+/* ---------- ROADMAP (list) ---------- */
+function toggleRoadmap(){ const o=$("roadmapOverlay"); o.style.display=o.style.display==="block"?"none":"block"; if(o.style.display==="block") buildRoadmap(); }
 function buildRoadmap(){
-  $("roadmapMsg").textContent = level>=100
-    ? "You are good to go and named solders will get upgraded every fifth level"
-    : "";
+  $("roadmapMsg").textContent=level>=100?"You are good to go and named solders will get upgraded every fifth level":"";
   const list=$("roadmapList"); list.innerHTML="";
   NAMES.forEach((nm,i)=>{
-    const unlock=(i+1)*10;
-    const div=document.createElement("div");
-    div.className="roadmap-item";
-    if(level>=unlock) div.classList.add("unlocked");
-    div.innerHTML=`<span>${nm}</span><span>Level ${unlock}</span>`;
-    list.appendChild(div);
+    const unlock=(i+1)*10; const d=document.createElement("div");
+    d.className="roadmap-item"; if(level>=unlock) d.classList.add("unlocked");
+    d.innerHTML=`<span>${nm}</span><span>Level ${unlock}</span>`; list.appendChild(d);
   });
 }
 
 /* ---------- SHADOW ARMY ---------- */
-function toggleNamed(){ const ov=$("namedOverlay"); ov.style.display=ov.style.display==="block"?"none":"block"; if(ov.style.display==="block") buildNamed(); }
+function toggleNamed(){ const o=$("namedOverlay"); o.style.display=o.style.display==="block"?"none":"block"; if(o.style.display==="block") buildNamed(); }
 function buildNamed(){
   const wrap=$("namedContainer"); wrap.innerHTML="";
-  if(zenosLevel>0){
-    wrap.appendChild(namedDiv("Zenos",zenosLevel,true));
-  }
-  for(let i=NAMED_COUNT-1;i>=0;i--){
-    if(named[i].level>0){
-      wrap.appendChild(namedDiv(NAMES[i],named[i].level,false));
-    }
-  }
-  if(totalGen>0){
-    wrap.appendChild(namedDiv("General Shadows",generalLevel(level),false));
-  }
+  if(zenosLevel) wrap.appendChild(entry("Zenos",zenosLevel,"z-top"));
+  for(let i=9;i>=0;i--) if(named[i].level) wrap.appendChild(entry(NAMES[i],named[i].level));
+  if(totalGen) wrap.appendChild(entry("General Shadows",gLvl(level)));
 }
-function namedDiv(name,lvl,top){
-  const d=document.createElement("div");
-  d.className="named-item"; if(top) d.classList.add("z-top");
-  d.innerHTML=`<span>${name}</span><span>Lv.${lvl}</span>`;
-  return d;
-}
+const entry=(n,l,c)=>{const d=document.createElement("div");d.className="named-item";if(c)d.classList.add(c);d.innerHTML=`<span>${n}</span><span>Lv.${l}</span>`;return d;};
 
 /* ---------- ABILITIES ---------- */
-function toggleAbilities(){ const ov=$("abilitiesOverlay"); ov.style.display=ov.style.display==="block"?"none":"block"; if(ov.style.display==="block") buildAbilities(); }
+function toggleAbilities(){ const o=$("abilitiesOverlay"); o.style.display=o.style.display==="block"?"none":"block"; if(o.style.display==="block") buildAbilities(); }
 function buildAbilities(){
   const list=$("abilitiesList"); list.innerHTML="";
-  ABILITIES.forEach(ab=>{
-    const div=document.createElement("div");
-    div.className="ability-item"; if(level>=ab.unlock) div.classList.add("unlocked");
-    div.innerHTML=`<span>${ab.name} (Unlocks at Level ${ab.unlock})</span><span>${level>=ab.unlock?"Unlocked":"Locked"}</span>`;
-    list.appendChild(div);
+  ABILITIES.forEach((ab,i)=>{
+    const d=document.createElement("div"); d.className="ability-item"; if(level>=ab.unlock) d.classList.add("unlocked");
+    d.innerHTML=`<span>${ab.name} (Unlocks at Level ${ab.unlock})</span><span>${level>=ab.unlock?"Unlocked":"Locked"}</span>`; list.appendChild(d);
   });
 }
 
 /* ---------- MY-ARMY (unchanged) ---------- */
-function toggleArmy(){ const ov=$("armyOverlay"); ov.style.display=ov.style.display==="block"?"none":"block"; if(ov.style.display==="block") buildArmy(); }
+function toggleArmy(){ const o=$("armyOverlay"); o.style.display=o.style.display==="block"?"none":"block"; if(o.style.display==="block") buildArmy(); }
 function buildArmy(){
   const c=$("armyContainer"); c.innerHTML="";
   const rows=[["You"],["Envy (Magician)"],["Crave","Desire","Siren","Ecstasy","Obsession","Flesh","Sin"],["Temptress (Commander)"],["Shadow Soldiers"],["Zenos (Giant)","Madness (Dragon)"]];
-  rows.forEach(r=>{
-    const row=document.createElement("div"); row.className="army-row";
-    r.forEach(lbl=>{
-      const it=document.createElement("div"); it.className="army-item";
-      if(lbl==="You") it.classList.add("me");
-      const key=lbl.split(" ")[0];
-      const unlocked=(key==="You")||(key==="Envy"&&named[8].level)||(key==="Crave"&&named[1].level)||(key==="Desire"&&named[2].level)||(key==="Siren"&&named[3].level)||(key==="Ecstasy"&&named[4].level)||(key==="Obsession"&&named[5].level)||(key==="Flesh"&&named[6].level)||(key==="Sin"&&named[7].level)||(key==="Temptress"&&named[0].level)||(key==="Madness"&&named[9].level)||(key==="Zenos"&&zenosLevel)||(key==="Shadow"&&totalGen);
-      if(unlocked) it.classList.add("unlocked");
-      it.textContent=lbl; row.appendChild(it);
-    }); c.appendChild(row);
-  });
+  rows.forEach(r=>{const row=document.createElement("div");row.className="army-row";
+    r.forEach(lbl=>{const it=document.createElement("div");it.className="army-item";if(lbl==="You")it.classList.add("me");
+      const key=lbl.split(" ")[0];const ok=(key==="You")||(key==="Envy"&&named[8].level)||(key==="Crave"&&named[1].level)||(key==="Desire"&&named[2].level)||(key==="Siren"&&named[3].level)||(key==="Ecstasy"&&named[4].level)||(key==="Obsession"&&named[5].level)||(key==="Flesh"&&named[6].level)||(key==="Sin"&&named[7].level)||(key==="Temptress"&&named[0].level)||(key==="Madness"&&named[9].level)||(key==="Zenos"&&zenosLevel)||(key==="Shadow"&&totalGen);
+      if(ok) it.classList.add("unlocked"); it.textContent=lbl; row.appendChild(it);});
+    c.appendChild(row);});
 }
 
 /* ---------- INIT ---------- */
