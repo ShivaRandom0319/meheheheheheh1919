@@ -74,3 +74,7 @@ h1{color:var(--cyan-400);font-size:2.25rem;margin-bottom:1.5rem;text-shadow:0 0 
 @media(max-width:420px){
   h1{font-size:1.5rem}
 }
+/* … all previous rules stay exactly the same … */
+
+/* Shadow-army extra (General Shadows shares same style) */
+.named-item.general{margin-top:.75rem}
