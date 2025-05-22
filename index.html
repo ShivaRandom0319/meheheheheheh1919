@@ -29,9 +29,9 @@
         <button onclick="resetGame()">Reset</button>
         <button onclick="toggleRoadmap()">Roadmap</button>
         <button onclick="toggleNamed()">Shadows</button>
-        <button onclick="forgeZeno()">Forge / Upgrade Zeno</button>
+        <button onclick="forgeZenos()">Forge / Upgrade Zenos</button>
         <button onclick="toggleAbilities()">Abilities</button>
-        <button onclick="toggleArmy()">My Army</button>  <!-- NEW -->
+        <button onclick="toggleArmy()">My Army</button>
       </div>
     </div>
   </main>
@@ -39,13 +39,16 @@
   <!-- centre pop-ups -->
   <div id="notification"></div>
   <div id="shadowReveal"></div>
-  <div id="abilityUnlock"></div>   <!-- NEW -->
+  <div id="abilityUnlock"></div>
 
   <!-- ROADMAP overlay -->
   <div id="roadmapOverlay" class="overlay">
     <button class="close-btn" onclick="toggleRoadmap()">Close</button>
+
+    <!-- message for ≥100 -->
     <div id="roadmapMsg" class="roadmap-msg"></div>
 
+    <!-- level dialog -->
     <div id="roadmapDialog" class="roadmap-dialog">
       <p id="roadmapDialogMsg"></p>
       <button class="dialog-close" onclick="closeRoadmapDialog()">OK</button>
@@ -68,7 +71,7 @@
     <div id="abilitiesList"></div>
   </div>
 
-  <!-- MY-ARMY overlay (NEW) -->
+  <!-- MY-ARMY overlay -->
   <div id="armyOverlay" class="overlay">
     <button class="close-btn" onclick="toggleArmy()">Close</button>
     <h2 class="overlay-title">Your Army</h2>
