@@ -27,23 +27,43 @@
         <button onclick="resist()">I Resisted</button>
         <button onclick="defeat()">Defeat</button>
         <button onclick="resetGame()">Reset</button>
+        <button onclick="toggleRoadmap()">Roadmap</button>
         <button onclick="toggleNamed()">Shadows</button>
-        <button onclick="forgeZeno()">Forge / Upgrade Zenos</button>
+        <button onclick="forgeZeno()">Forge / Upgrade Zeno</button>
+        <button onclick="toggleAbilities()">Abilities</button>   <!-- NEW -->
       </div>
     </div>
   </main>
 
-  <!-- generic pop-ups -->
   <div id="notification"></div>
   <div id="shadowReveal"></div>
 
-  
+  <!-- ROADMAP overlay -->
+  <div id="roadmapOverlay" class="overlay">
+    <button class="close-btn" onclick="toggleRoadmap()">Close</button>
 
-  <!-- named-shadow overlay -->
+    <div id="roadmapMsg" class="roadmap-msg"></div>
+
+    <div id="roadmapDialog" class="roadmap-dialog">
+      <p id="roadmapDialogMsg"></p>
+      <button class="dialog-close" onclick="closeRoadmapDialog()">OK</button>
+    </div>
+
+    <div id="roadmapGrid"></div>
+  </div>
+
+  <!-- SHADOW ARMY overlay -->
   <div id="namedOverlay" class="overlay">
     <button class="close-btn" onclick="toggleNamed()">Close</button>
     <h2 class="overlay-title">Shadow Army</h2>
     <div id="namedContainer"></div>
+  </div>
+
+  <!-- ABILITIES overlay (NEW) -->
+  <div id="abilitiesOverlay" class="overlay">
+    <button class="close-btn" onclick="toggleAbilities()">Close</button>
+    <h2 class="overlay-title">Abilities</h2>
+    <div id="abilitiesList"></div>
   </div>
 
   <script src="script.js"></script>
