@@ -1,4 +1,4 @@
-/* Same content as previous delivery – kept for completeness. */
+/* full stylesheet — identical to last delivery */
 :root{--dark-900:#0b0c10;--dark-800:#111820;--dark-700:#1f2833;--cyan-400:#66fcf1;--cyan-300:#45a29e;--red-400:#ff0044;--red-300:#a00028;--text-light:#c5c6c7;}
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 body{font-family:"Montserrat",sans-serif;background:linear-gradient(135deg,var(--dark-900),var(--dark-700));color:var(--text-light);display:flex;min-height:100vh;justify-content:center}
