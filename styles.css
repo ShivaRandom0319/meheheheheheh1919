@@ -78,7 +78,3 @@ h1{color:var(--cyan-400);font-size:2.25rem;margin-bottom:1.5rem;text-shadow:0 0 
   h1{font-size:1.5rem}
   #roadmapGrid{--box:40px;gap:.5rem} .grid-box{font-size:.75rem}
 }
-
-/* enlarged roadmap dialog */
-.roadmap-dialog{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:90%;max-width:420px;background:var(--bg-panel);border:2px solid var(--violet-glow);border-radius:.9rem;box-shadow:0 0 22px var(--violet-glow);padding:2.5rem 2rem 3.5rem;font-size:1.25rem;line-height:1.45;text-align:center;color:#fff;display:none;z-index:1250}
-.dialog-close{position:absolute;bottom:1.2rem;left:50%;transform:translateX(-50%);background:var(--violet-glow);color:var(--bg-deep);border:none;border-radius:.45rem;padding:.65rem 1.75rem;font-weight:700;font-size:1.05rem;box-shadow:0 0 14px var(--violet-glow);cursor:pointer}
