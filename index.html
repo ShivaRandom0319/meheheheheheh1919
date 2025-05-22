@@ -30,18 +30,20 @@
         <button onclick="toggleRoadmap()">Roadmap</button>
         <button onclick="toggleNamed()">Shadows</button>
         <button onclick="forgeZeno()">Forge / Upgrade Zeno</button>
-        <button onclick="toggleAbilities()">Abilities</button>   <!-- NEW -->
+        <button onclick="toggleAbilities()">Abilities</button>
+        <button onclick="toggleArmy()">My Army</button>  <!-- NEW -->
       </div>
     </div>
   </main>
 
+  <!-- centre pop-ups -->
   <div id="notification"></div>
   <div id="shadowReveal"></div>
+  <div id="abilityUnlock"></div>   <!-- NEW -->
 
   <!-- ROADMAP overlay -->
   <div id="roadmapOverlay" class="overlay">
     <button class="close-btn" onclick="toggleRoadmap()">Close</button>
-
     <div id="roadmapMsg" class="roadmap-msg"></div>
 
     <div id="roadmapDialog" class="roadmap-dialog">
@@ -59,11 +61,18 @@
     <div id="namedContainer"></div>
   </div>
 
-  <!-- ABILITIES overlay (NEW) -->
+  <!-- ABILITIES overlay -->
   <div id="abilitiesOverlay" class="overlay">
     <button class="close-btn" onclick="toggleAbilities()">Close</button>
     <h2 class="overlay-title">Abilities</h2>
     <div id="abilitiesList"></div>
+  </div>
+
+  <!-- MY-ARMY overlay (NEW) -->
+  <div id="armyOverlay" class="overlay">
+    <button class="close-btn" onclick="toggleArmy()">Close</button>
+    <h2 class="overlay-title">Your Army</h2>
+    <div id="armyContainer"></div>
   </div>
 
   <script src="script.js"></script>
