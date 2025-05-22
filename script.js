@@ -1,5 +1,5 @@
 /* =======================================================
-   SOLO SLAYER  –  SCRIPT (General Shadows upgrades added)
+   SOLO SLAYER – General Shadows Level & pop-ups
    ======================================================= */
 
 /* ---------- CONSTANTS ---------- */
@@ -30,28 +30,23 @@ while (abilityStatus.length < ABILITIES.length) abilityStatus.push(false);
 /* ---------- HELPERS ---------- */
 const $ = id => document.getElementById(id);
 const rank = lv => lv>=75?"S":lv>=50?"A":lv>=35?"B":lv>=20?"C":lv>=10?"D":"E";
-const gsLevel = lv => lv<100 ? 0 : 1 + Math.floor((lv-100)/25);
+const generalLevel = lv => lv<125 ? 1 : 1+Math.floor((lv-100)/25);
 
 /* ---------- POP-UPS ---------- */
-function showPopup(html){
-  $("shadowReveal").innerHTML=html;
-  $("shadowReveal").style.display="block";
-}
+function showPopup(html){ $("shadowReveal").innerHTML=html; $("shadowReveal").style.display="block"; }
 function closePopup(){ $("shadowReveal").style.display="none"; }
 function banner(msg){
   const d=document.createElement("div");
-  d.className="shadow-arrival";
-  d.textContent=msg;
-  document.body.appendChild(d);
+  d.className="shadow-arrival"; d.textContent=msg; document.body.appendChild(d);
   setTimeout(()=>d.remove(),3000);
 }
-
-/* ---------- ABILITY UNLOCK ---------- */
 function notifyAbility(idx){
   $("abilityUnlock").innerHTML=
     `<strong>${ABILITIES[idx].name}</strong> unlocked!<br><button onclick="$('abilityUnlock').style.display='none'">OK</button>`;
   $("abilityUnlock").style.display="block";
 }
+
+/* ---------- ABILITY CHECK ---------- */
 function checkAbility(prev,curr){
   ABILITIES.forEach((ab,i)=>{
     if(!abilityStatus[i] && prev<ab.unlock && curr>=ab.unlock){
@@ -62,13 +57,12 @@ function checkAbility(prev,curr){
   });
 }
 
-/* ---------- GENERAL SHADOWS UPGRADE ---------- */
-function checkGSUpgrade(prev,curr){
-  const prevGS = gsLevel(prev);
-  const currGS = gsLevel(curr);
-  if(currGS > prevGS){
-    banner(`General Shadows Lv.${currGS}`);
-    showPopup(`General Shadows upgraded to <strong>Lv.${currGS}</strong><br><button onclick="closePopup()">OK</button>`);
+/* ---------- GENERAL SHADOWS UPGRADE CHECK ---------- */
+function checkGeneralUpgrade(prev,curr){
+  const before = generalLevel(prev);
+  const after  = generalLevel(curr);
+  if(after>before){
+    showPopup(`General Shadows upgraded to <strong>Level ${after}</strong><br><button onclick="closePopup()">OK</button>`);
   }
 }
 
@@ -97,9 +91,7 @@ function resist(){
   history.push("resist"); localStorage.setItem("hist",JSON.stringify(history));
   const next=level+1;
 
-  if(next%10===0 && next<=100){          // named (≤100)
-    performNamedUpgrade(next,true);
-  }else if(next>100 && (next-100)%5===0){
+  if(next%10===0 && next<=100 || next>100 && (next-100)%5===0){
     performNamedUpgrade(next,true);
   }else{
     showPopup(`${next*2} shadow soldiers await<br><button onclick="collectSoldiers()">Arise</button>`);
@@ -109,7 +101,7 @@ function collectSoldiers(){
   closePopup();
   const prev=level;
   level++; localStorage.setItem("level",level);
-  checkAbility(prev,level); checkGSUpgrade(prev,level);
+  checkAbility(prev,level); checkGeneralUpgrade(prev,level);
 
   const gain=level*2;
   totalGen+=gain; localStorage.setItem("totalGen",totalGen);
@@ -123,7 +115,7 @@ function performNamedUpgrade(targetLevel,auto){
   const nm  = NAMES[idx];
   const prev=level;
   level++; if(auto) localStorage.setItem("level",level);
-  checkAbility(prev,level); checkGSUpgrade(prev,level);
+  checkAbility(prev,level); checkGeneralUpgrade(prev,level);
 
   if(named[idx].level===0){
     named[idx].level=1;
@@ -143,7 +135,6 @@ function defeat(){
   localStorage.setItem("failures",failures);
   localStorage.setItem("totalGen",totalGen);
   localStorage.setItem("hist",JSON.stringify(history));
-
   showPopup(`You gave in.<br>Lost <strong>${lost}</strong> soldiers.<br><button onclick="closePopup()">OK</button>`);
   updateUI();
 }
@@ -153,8 +144,7 @@ function forgeZenos(){
     totalGen-=cost; zenosLevel++;
     localStorage.setItem("totalGen",totalGen);
     localStorage.setItem("zenosLevel",zenosLevel);
-    banner(`Zenos Lv.${zenosLevel}`);
-    updateUI();
+    banner(`Zenos Lv.${zenosLevel}`); updateUI();
   }else{
     showPopup(`Need ${cost} soldiers to upgrade Zenos.<br><button onclick="closePopup()">OK</button>`);
   }
@@ -170,7 +160,7 @@ function resetGame(){
   updateUI();
 }
 
-/* ---------- ROADMAP (list) ---------- */
+/* ---------- ROADMAP ---------- */
 function toggleRoadmap(){
   const ov=$("roadmapOverlay");
   ov.style.display=ov.style.display==="block"?"none":"block";
@@ -180,7 +170,6 @@ function buildRoadmap(){
   $("roadmapMsg").textContent = level>=100
     ? "You are good to go and named solders will get upgraded every fifth level"
     : "";
-
   const list=$("roadmapList"); list.innerHTML="";
   NAMES.forEach((nm,i)=>{
     const unlock=(i+1)*10;
@@ -192,93 +181,56 @@ function buildRoadmap(){
   });
 }
 
-/* ---------- SHADOW ARMY LIST ---------- */
-function toggleNamed(){
-  const ov=$("namedOverlay");
-  ov.style.display=ov.style.display==="block"?"none":"block";
-  if(ov.style.display==="block") buildNamed();
-}
+/* ---------- SHADOW ARMY ---------- */
+function toggleNamed(){ const ov=$("namedOverlay"); ov.style.display=ov.style.display==="block"?"none":"block"; if(ov.style.display==="block") buildNamed(); }
 function buildNamed(){
   const wrap=$("namedContainer"); wrap.innerHTML="";
   if(zenosLevel>0){
-    const z=document.createElement("div");
-    z.className="named-item z-top";
-    z.innerHTML=`<span>Zenos</span><span>Lv.${zenosLevel}</span>`;
-    wrap.appendChild(z);
+    wrap.appendChild(namedDiv("Zenos",zenosLevel,true));
   }
   for(let i=NAMED_COUNT-1;i>=0;i--){
     if(named[i].level>0){
-      const div=document.createElement("div");
-      div.className="named-item";
-      div.innerHTML=`<span>${NAMES[i]}</span><span>Lv.${named[i].level}</span>`;
-      wrap.appendChild(div);
+      wrap.appendChild(namedDiv(NAMES[i],named[i].level,false));
     }
   }
-  /* --- General Shadows row --- */
-  const gs=gsLevel(level);
-  const gDiv=document.createElement("div");
-  gDiv.className="named-item general";
-  if(gs>0) gDiv.classList.add("unlocked");
-  gDiv.innerHTML=`<span>General Shadows</span><span>Lv.${gs}</span>`;
-  wrap.appendChild(gDiv);
+  if(totalGen>0){
+    wrap.appendChild(namedDiv("General Shadows",generalLevel(level),false));
+  }
+}
+function namedDiv(name,lvl,top){
+  const d=document.createElement("div");
+  d.className="named-item"; if(top) d.classList.add("z-top");
+  d.innerHTML=`<span>${name}</span><span>Lv.${lvl}</span>`;
+  return d;
 }
 
-/* ---------- ABILITIES LIST ---------- */
-function toggleAbilities(){
-  const ov=$("abilitiesOverlay");
-  ov.style.display=ov.style.display==="block"?"none":"block";
-  if(ov.style.display==="block") buildAbilities();
-}
+/* ---------- ABILITIES ---------- */
+function toggleAbilities(){ const ov=$("abilitiesOverlay"); ov.style.display=ov.style.display==="block"?"none":"block"; if(ov.style.display==="block") buildAbilities(); }
 function buildAbilities(){
   const list=$("abilitiesList"); list.innerHTML="";
-  ABILITIES.forEach((ab,i)=>{
+  ABILITIES.forEach(ab=>{
     const div=document.createElement("div");
-    div.className="ability-item";
-    if(level>=ab.unlock) div.classList.add("unlocked");
+    div.className="ability-item"; if(level>=ab.unlock) div.classList.add("unlocked");
     div.innerHTML=`<span>${ab.name} (Unlocks at Level ${ab.unlock})</span><span>${level>=ab.unlock?"Unlocked":"Locked"}</span>`;
     list.appendChild(div);
   });
 }
 
-/* ---------- MY-ARMY VISUAL ---------- */
-function toggleArmy(){
-  const ov=$("armyOverlay");
-  ov.style.display=ov.style.display==="block"?"none":"block";
-  if(ov.style.display==="block") buildArmy();
-}
+/* ---------- MY-ARMY (unchanged) ---------- */
+function toggleArmy(){ const ov=$("armyOverlay"); ov.style.display=ov.style.display==="block"?"none":"block"; if(ov.style.display==="block") buildArmy(); }
 function buildArmy(){
-  const container=$("armyContainer"); container.innerHTML="";
-  const rows=[
-    ["You"],
-    ["Envy (Magician)"],
-    ["Crave","Desire","Siren","Ecstasy","Obsession","Flesh","Sin"],
-    ["Temptress (Commander)"],
-    ["Shadow Soldiers"],
-    ["Zenos (Giant)","Madness (Dragon)"]
-  ];
+  const c=$("armyContainer"); c.innerHTML="";
+  const rows=[["You"],["Envy (Magician)"],["Crave","Desire","Siren","Ecstasy","Obsession","Flesh","Sin"],["Temptress (Commander)"],["Shadow Soldiers"],["Zenos (Giant)","Madness (Dragon)"]];
   rows.forEach(r=>{
-    const rowDiv=document.createElement("div"); rowDiv.className="army-row";
+    const row=document.createElement("div"); row.className="army-row";
     r.forEach(lbl=>{
       const it=document.createElement("div"); it.className="army-item";
       if(lbl==="You") it.classList.add("me");
       const key=lbl.split(" ")[0];
-      const unlocked=(key==="You")||
-        (key==="Envy"      && named[8].level>0)||
-        (key==="Crave"     && named[1].level>0)||
-        (key==="Desire"    && named[2].level>0)||
-        (key==="Siren"     && named[3].level>0)||
-        (key==="Ecstasy"   && named[4].level>0)||
-        (key==="Obsession" && named[5].level>0)||
-        (key==="Flesh"     && named[6].level>0)||
-        (key==="Sin"       && named[7].level>0)||
-        (key==="Temptress" && named[0].level>0)||
-        (key==="Madness"   && named[9].level>0)||
-        (key==="Zenos"     && zenosLevel>0)    ||
-        (key==="Shadow"    && totalGen>0);
+      const unlocked=(key==="You")||(key==="Envy"&&named[8].level)||(key==="Crave"&&named[1].level)||(key==="Desire"&&named[2].level)||(key==="Siren"&&named[3].level)||(key==="Ecstasy"&&named[4].level)||(key==="Obsession"&&named[5].level)||(key==="Flesh"&&named[6].level)||(key==="Sin"&&named[7].level)||(key==="Temptress"&&named[0].level)||(key==="Madness"&&named[9].level)||(key==="Zenos"&&zenosLevel)||(key==="Shadow"&&totalGen);
       if(unlocked) it.classList.add("unlocked");
-      it.textContent=lbl; rowDiv.appendChild(it);
-    });
-    container.appendChild(rowDiv);
+      it.textContent=lbl; row.appendChild(it);
+    }); c.appendChild(row);
   });
 }
 
