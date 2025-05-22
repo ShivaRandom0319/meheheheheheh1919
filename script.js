@@ -6,8 +6,8 @@
 
 /* ---------- CONSTANTS ---------- */
 const NAMES = [
-  "Temptress","Crave","Desire","Siren","Ecstasy",
-  "Obsession","Flesh","Sin","Envy","Madness"
+  "Temptress (Commander)","Crave","Desire","Siren","Ecstasy",
+  "Obsession","Flesh","Sin","Envy (Magician)","Madness(Dragon)"
 ];
 const NAMED_COUNT = 10;
 
@@ -139,11 +139,11 @@ function forgeZeno(){
     zenoLevel++;
     localStorage.setItem("totalGen", totalGen);
     localStorage.setItem("zenoLevel", zenoLevel);
-    banner(`Zeno Lv.${zenoLevel}`);
+    banner(`Zenos Lv.${zenoLevel}`);
     updateUI();
   } else {
     $("shadowReveal").innerHTML =
-      `Need ${cost} soldiers to upgrade Zeno.<br><button onclick="closeReveal()">OK</button>`;
+      `Need ${cost} soldiers to upgrade Zenos.<br><button onclick="closeReveal()">OK</button>`;
     $("shadowReveal").style.display="block";
   }
 }
@@ -216,7 +216,7 @@ function buildNamed(){
   if (zenoLevel > 0){
     const z = document.createElement("div");
     z.className="named-item z-top";
-    z.innerHTML=`<span>Zenos</span><span>Lv.${zenoLevel}</span>`;
+    z.innerHTML=`<span>Zenos (Giant)</span><span>Lv.${zenoLevel}</span>`;
     wrap.appendChild(z);
   }
 
