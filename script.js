@@ -245,7 +245,7 @@ function buildNamed(){
   if (zenoLevel > 0){
     const z = document.createElement("div");
     z.className="named-item z-top";
-    z.innerHTML=`<span>Zenos</span><span>Lv.${zenoLevel}</span>`;
+    z.innerHTML=`<span>Zenos (Giant)</span><span>Lv.${zenoLevel}</span>`;
     wrap.appendChild(z);
   }
   for (let i = NAMED_COUNT-1; i >= 0; i--){
